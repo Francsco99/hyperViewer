@@ -1,47 +1,23 @@
-// Gestione animazione al clic su Get Started
-document.getElementById("getStartedBtn").addEventListener("click", function(e) {
-    e.preventDefault();
-    // Nascondi gradualmente l'hero
-    document.getElementById("hero-container").classList.add("hide-hero");
-    // Espandi il contenitore del grafo
-    document.getElementById("graph-container").classList.add("expand-graph");
-    // Dopo l'animazione (1s), reindirizza a graph.html
-    setTimeout(function() {
-      window.location.href = "graph.html";
-    }, 1000);
-  });
-  
-  // Gestione offcanvas per le istruzioni
-  const infoBtn = document.getElementById("infoBtn");
-  const offcanvas = document.getElementById("infoOffcanvas");
-  const closeOffcanvas = document.getElementById("closeOffcanvas");
-  
-  infoBtn.addEventListener("click", function() {
-    offcanvas.classList.add("active");
-  });
-  
-  closeOffcanvas.addEventListener("click", function() {
-    offcanvas.classList.remove("active");
-  });
 const graphContainer = document.getElementById('sample-graph');
-const width = graphContainer.clientWidth;
-const height = graphContainer.clientHeight;
+const width =graphContainer.clientWidth;
+const height =graphContainer.clientHeight;
 
-// Crea l'SVG
+// Creazione dell'SVG
 const svg = d3.select("#sample-graph")
-                .append("svg")
-                .attr("width", width)
-                .attr("height", height);
+              .append("svg")
+              .attr("width", width)
+              .attr("height", height);
 
-// Genera 15 nodi
-const nodeCount = 15;
+
+// Genera i nodi
+const nodeCount = 50;
 const nodes = d3.range(nodeCount).map(i => ({ id: "Node " + (i + 1) }));
 
 // Genera link casuali tra i nodi (con probabilità 0.3 per ogni coppia)
 const links = [];
 for (let i = 0; i < nodeCount; i++) {
     for (let j = i + 1; j < nodeCount; j++) {
-    if (Math.random() < 0.3) {
+    if (Math.random() < 0.15) {
         links.push({ source: nodes[i].id, target: nodes[j].id });
     }
     }
@@ -63,9 +39,15 @@ const pastelColors = [
 
 // Crea la simulazione con forze per il layout a rete (force-directed)
 const simulation = d3.forceSimulation(nodes)
-                        .force("link", d3.forceLink(links).id(d => d.id).distance(100))
-                        .force("charge", d3.forceManyBody().strength(-300))
-                        .force("center", d3.forceCenter(width / 2, height / 2));
+    .force("link", d3.forceLink(links).id(d => d.id).distance(500))
+    // Abbassa la forza di repulsione per un movimento più lento
+    .force("charge", d3.forceManyBody().strength(-100))
+    .force("center", d3.forceCenter(width / 2, height / 2));
+
+// Imposta un'energia bassa iniziale e disabilita il raffreddamento
+simulation.alpha(0.1);      // Imposta un'energia iniziale moderata
+simulation.alphaDecay(0);   // Disattiva la diminuzione automatica dell'alpha
+
 
 // Disegna i collegamenti
 const link = svg.append("g")

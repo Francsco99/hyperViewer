@@ -18,7 +18,6 @@
   <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
   <link rel="manifest" href="favicon/site.webmanifest">
-
 </head>
 <body>
   <!-- Navbar -->
@@ -27,39 +26,35 @@
       <a class="navbar-brand" href="#">
         <img src="assets/images/hat-wizard-solid.png" alt="Logo">
       </a>
-      <button id="infoBtn" class="btn btn-outline-secondary ms-auto">Info</button>
     </div>
   </nav>
   
-  <!-- Offcanvas per le istruzioni -->
-  <div id="infoOffcanvas" class="offcanvas-center">
-    <h5>Istruzioni</h5>
-    <p>Benvenuto in HyperView! Questa è la pagina di landing. Clicca su "Get Started" per entrare nell'editor del grafo. Nella pagina successiva potrai cercare nodi, attivare le etichette e raggruppare i nodi.</p>
-    <button id="closeOffcanvas" class="btn btn-secondary">Chiudi</button>
-  </div>
-  
   <!-- Contenitore principale -->
-  <div class="container-fluid p-0">
-    <!-- Contenitore Hero -->
-    <div id="hero-container">
-      <div class="hero">
-        <div class="hero-text">HyperView</div>
-      </div>
-      <div class="text-center my-4">
-        <button id="getStartedBtn" class="btn btn-primary btn-lg">Get Started</button>
-      </div>
+  <div class="pt-5 container-fluid full-height d-flex flex-column">
+    <!-- Riga con due colonne -->
+    <div id="text-container" class="row flex-grow-1 align-items-center p-3">
+        <div class="col-md-6 text-left">
+            <p class="subtitle">From text to insight: transforming 
+              <a class="text-highlight" href="https://it.wikipedia.org/wiki/Ipertesto">hypertext</a>
+              into a visual experience.</p>
+            <a id="getStartedBtn" class="btn btn-primary m-2 rounded-pill" href="graph.html">Get Started</a>
+            <a id="infoBtn" class="btn btn-outline-secondary m-2 rounded-pill">Info</a>
+        </div>
+        <div class="col-md-6 text-center">
+            <p class="main-title">HyperView</p>
+        </div>
     </div>
-    <!-- Contenitore Grafo -->
-    <div id="graph-container">
-      <div id="sample-graph"></div>
-    </div>
-  </div>
 
-  <!-- Script per il grafo di esempio -->
-  <script src="assets/js/sampleGraph.js"></script>
+    <!-- Riga vuota -->
+    <div id="graph-container" class="row flex-grow-1">
+        <div id="sample-graph"></div>
+    </div>
+</div>
 
   <!-- Bootstrap JS e Popper.js -->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js"></script>
+  <!-- Script per il grafo di esempio -->
+  <script src="assets/js/sampleGraph.js"></script>
 </body>
 </html>
