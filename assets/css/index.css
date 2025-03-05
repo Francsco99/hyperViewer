@@ -1,0 +1,62 @@
+body, html {
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-brand img {
+  max-height: 50px;
+}
+/* Offcanvas centrato per le istruzioni */
+.offcanvas-center {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 500px;
+  background: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  padding: 1rem;
+  z-index: 1050;
+  display: none;
+}
+.offcanvas-center.active {
+  display: block;
+}
+/* Contenitori per la transizione */
+#hero-container {
+  transition: opacity 1s ease-in-out, transform 1s ease-in-out;
+  opacity: 1;
+}
+#hero-container.hide-hero {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+#graph-container {
+  transition: height 1s ease-in-out;
+  height: 50vh;
+  overflow: hidden;
+}
+#graph-container.expand-graph {
+  height: 100vh;
+}
+/* Hero Section: scritta a sinistra, logo a destra */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3rem;
+}
+.hero-text {
+  font-size: 4rem;
+  font-weight: bold;
+}
+.hero-logo {
+  max-width: 300px;
+}
+/* Sample Graph: non si espande oltre il contenitore */
+#sample-graph {
+  width: 100%;
+  height: 100%;
+}

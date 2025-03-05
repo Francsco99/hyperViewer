@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HyperView - Landing</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- D3 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="assets/css/index.css">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+  <link rel="manifest" href="favicon/site.webmanifest">
+
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-light">
+    <div class="container-fluid d-flex align-items-center">
+      <a class="navbar-brand" href="#">
+        <img src="assets/images/hat-wizard-solid.png" alt="Logo">
+      </a>
+      <button id="infoBtn" class="btn btn-outline-secondary ms-auto">Info</button>
+    </div>
+  </nav>
+  
+  <!-- Offcanvas per le istruzioni -->
+  <div id="infoOffcanvas" class="offcanvas-center">
+    <h5>Istruzioni</h5>
+    <p>Benvenuto in HyperView! Questa è la pagina di landing. Clicca su "Get Started" per entrare nell'editor del grafo. Nella pagina successiva potrai cercare nodi, attivare le etichette e raggruppare i nodi.</p>
+    <button id="closeOffcanvas" class="btn btn-secondary">Chiudi</button>
+  </div>
+  
+  <!-- Contenitore principale -->
+  <div class="container-fluid p-0">
+    <!-- Contenitore Hero -->
+    <div id="hero-container">
+      <div class="hero">
+        <div class="hero-text">HyperView</div>
+      </div>
+      <div class="text-center my-4">
+        <button id="getStartedBtn" class="btn btn-primary btn-lg">Get Started</button>
+      </div>
+    </div>
+    <!-- Contenitore Grafo -->
+    <div id="graph-container">
+      <div id="sample-graph"></div>
+    </div>
+  </div>
+
+  <!-- Script per il grafo di esempio -->
+  <script src="assets/js/sampleGraph.js"></script>
+
+  <!-- Bootstrap JS e Popper.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
