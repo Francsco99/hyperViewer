@@ -47,35 +47,52 @@ function toggleButton(buttonId, stateVariable, updateFunction) {
 // FUNZIONI DI RAGGRUPPAMENTO
 // ============================================
 function groupGraphData(nodes, links) {
-    // Mappa ogni nodo al suo gruppo: parte prima di '#' (oppure l'intero id se non presente)
+    // Costruiamo una mappa dei gruppi basata sul "basepath"
+    // Se un nodo è un anchor (id che inizia con "#") ed ha una proprietà baseFile,
+    // allora il gruppo è rappresentato da baseFile.
     let groupMapping = {};
-    nodes.forEach(node => {
-        let groupId = node.id.split("#")[0];
-        groupMapping[node.id] = groupId;
-    });
-
-    // Crea i nodi raggruppati (un solo nodo per gruppo)
     let groupedNodesObj = {};
     nodes.forEach(node => {
-        let groupId = groupMapping[node.id];
+        let groupId;
+        if (node.id.charAt(0) === "#" && node.baseFile) {
+            groupId = node.baseFile;
+        } else {
+            groupId = node.id.split("#")[0];
+        }
+        groupMapping[node.id] = groupId;
+        
         if (!groupedNodesObj[groupId]) {
-            groupedNodesObj[groupId] = { id: groupId, label: groupId };
+            groupedNodesObj[groupId] = { 
+                id: groupId, 
+                label: groupId,
+                // Conserva tutti i nodi originali appartenenti a questo gruppo
+                originalNodes: [node]
+            };
+        } else {
+            groupedNodesObj[groupId].originalNodes.push(node);
         }
     });
     let groupedNodes = Object.values(groupedNodesObj);
 
-    // Crea i link raggruppati sostituendo source e target con i rispettivi gruppi.
-    // Scarta i self-loop (link all'interno dello stesso gruppo)
+    // Raggruppa i link: usa la mappa groupMapping per sostituire source e target
     let groupedLinksObj = {};
     links.forEach(link => {
         let src = (typeof link.source === "object") ? link.source.id : link.source;
         let tgt = (typeof link.target === "object") ? link.target.id : link.target;
         let groupSrc = groupMapping[src];
         let groupTgt = groupMapping[tgt];
+        // Raggruppa solo se i gruppi sono differenti
         if (groupSrc !== groupTgt) {
             let key = groupSrc + "->" + groupTgt;
             if (!groupedLinksObj[key]) {
-                groupedLinksObj[key] = { source: groupSrc, target: groupTgt, label: "" };
+                groupedLinksObj[key] = { 
+                    source: groupSrc, 
+                    target: groupTgt, 
+                    label: "", 
+                    originalLinks: [link]
+                };
+            } else {
+                groupedLinksObj[key].originalLinks.push(link);
             }
         }
     });
@@ -97,8 +114,10 @@ async function processZip(zip) {
             let parser = new DOMParser();
             let doc = parser.parseFromString(content, "text/html");
 
+            // Crea il nodo per il file HTML
             nodes[fileName] = { id: fileName, label: fileName };
 
+            // Processa tutti gli href presenti nella pagina
             doc.querySelectorAll("a[href]").forEach(link => {
                 let href = link.getAttribute("href");
                 let text = link.textContent.trim() || "link";
@@ -106,7 +125,26 @@ async function processZip(zip) {
                 if (href.startsWith("http")) {
                     nodes["web"] = { id: "web", label: "Web" };
                     links.push({ source: fileName, target: "web", label: text });
+                } else if (href.charAt(0) === "#") {
+                    // href che rimanda ad una sezione della stessa pagina:
+                    // Imposta anche la proprietà baseFile per poter raggruppare
+                    let targetAnchor = href; // ad esempio "#info"
+                    if (!nodes[targetAnchor]) {
+                        nodes[targetAnchor] = { 
+                            id: targetAnchor, 
+                            label: targetAnchor, 
+                            isAnchor: true,
+                            baseFile: fileName  // memorizza il file di provenienza
+                        };
+                    } else {
+                        nodes[targetAnchor].isAnchor = true;
+                        if (!nodes[targetAnchor].baseFile) {
+                            nodes[targetAnchor].baseFile = fileName;
+                        }
+                    }
+                    links.push({ source: fileName, target: targetAnchor, label: text });
                 } else {
+                    // href relativo ad un'altra pagina o percorso
                     let targetFile = resolvePath(fileName, href);
                     if (!nodes[targetFile]) nodes[targetFile] = { id: targetFile, label: targetFile };
                     links.push({ source: fileName, target: targetFile, label: text });
@@ -181,11 +219,15 @@ function visualizeGraph(nodes, links) {
         .text(d => d.label)
         .style("display", showLinkLabels ? "block" : "none");
 
-    // Crea i nodi
+    // Crea i nodi senza definire inline il colore
     let node = nodeGroup.selectAll("circle")
         .data(nodes)
         .enter().append("circle")
-        .attr("class", d => d.id === "web" ? "node web" : "node")
+        .attr("class", d => {
+            if (d.id === "web") return "node web";
+            // Assegna la classe "anchor-node" se il nodo è un anchor, altrimenti "normal-node"
+            return d.isAnchor ? "node anchor-node" : "node normal-node";
+        })
         .attr("r", 10)
         .on("click", (event, d) => {
             event.stopPropagation();
@@ -217,13 +259,29 @@ function visualizeGraph(nodes, links) {
         .style("font-size", "12px")
         .style("display", showNodeLabels ? "block" : "none");
 
-    // Tooltip sugli archi
+    // Tooltip sugli archi: se ci sono archi multipli tra gli stessi nodi, li mostra come lista
     link.on("mouseover", function(event, d) {
+        // Filtra in linksData gli archi con lo stesso source e target
+        let sameLinks = linksData.filter(linkObj => {
+            let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
+            let tgt = (typeof linkObj.target === "object") ? linkObj.target.id : linkObj.target;
+            return src === d.source.id && tgt === d.target.id;
+        });
+        let tooltipContent = `<strong>Link: ${d.source.id} → ${d.target.id}</strong>`;
+        if(sameLinks.length > 1) {
+            tooltipContent += "<ul>";
+            sameLinks.forEach(linkObj => {
+                tooltipContent += `<li>${linkObj.label}</li>`;
+            });
+            tooltipContent += "</ul>";
+        } else {
+            tooltipContent += `<br>${d.label}`;
+        }
         d3.select("#tooltip")
             .style("left", event.pageX + 5 + "px")
             .style("top", event.pageY + 5 + "px")
             .style("display", "block")
-            .html(`Link: ${d.source.id} -> ${d.target.id}`);
+            .html(tooltipContent);
     })
     .on("mouseout", function() {
         d3.select("#tooltip").style("display", "none");
@@ -245,7 +303,7 @@ function visualizeGraph(nodes, links) {
             .attr("cy", d => d.y);
 
         nodeText.attr("x", d => d.x)
-            .attr("y", d => d.y);
+                .attr("y", d => d.y);
     });
 }
 
@@ -269,23 +327,67 @@ function dragEnded(event, d) {
     d.fy = null;
 }
 
+// Aggiornata la funzione selectNode per mostrare tutte le informazioni originali
 function selectNode(id, link, node) {
     selectedNode = id;
+    // Evidenzia il nodo selezionato e i link relativi
     node.classed("selected", d => d.id === id);
     link.classed("highlighted", d => d.source.id === id);
 
-    document.getElementById("node-info").style.display = "block";
-    document.getElementById("node-name").innerHTML = `<strong>${id}</strong>`;
+    // Rimuove il grassetto da tutte le etichette dei nodi
+    d3.selectAll(".node-label").classed("bold-label", false);
 
-    const nodeLinks = document.getElementById("node-links");
-    nodeLinks.innerHTML = '';
+    // Applica il grassetto all'etichetta del nodo selezionato
+    d3.selectAll(".node-label")
+        .filter(d => d.id === id)
+        .classed("bold-label", true);
+    
+    const nodeInfoContainer = document.getElementById("node-info");
+    nodeInfoContainer.style.display = "block";
+    
+    // Se il nodo selezionato è raggruppato, recupera gli id originali
+    let groupNode = nodesData.find(n => n.id === id && n.originalNodes);
+    let sourceIds = groupNode ? groupNode.originalNodes.map(n => n.id) : [id];
 
-    linksData.forEach(link => {
-        if (link.source.id === id) {
-            const listItem = document.createElement("li");
-            listItem.textContent = `${link.source.id} -> ${link.target.id}`;
-            nodeLinks.appendChild(listItem);
-        }
+    // Usa i dati originali per i link in uscita
+    let outgoingLinks = originalLinksData.filter(linkObj => {
+        let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
+        return sourceIds.includes(src);
+    });
+
+    // Costruisci il contenuto HTML della card usando Bootstrap
+    let contentHTML = `
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Node Details</h5>
+          <button id="close-node-info" type="button" class="btn-close" aria-label="Close"></button>
+        </div>
+        <div class="card-body">
+          <p class="card-text"><strong>ID:</strong> ${id}</p>`;
+    
+    if (outgoingLinks.length > 0) {
+        contentHTML += `
+          <h6 class="mt-3">Outgoing links:</h6>
+          <ul class="list-group list-group-flush">`;
+        outgoingLinks.forEach(linkObj => {
+            let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
+            let tgt = (typeof linkObj.target === "object") ? linkObj.target.id : linkObj.target;
+            contentHTML += `<li class="list-group-item">${src} ➡️ ${tgt} <br>(${linkObj.label})</li>`;
+        });
+        contentHTML += `</ul>`;
+    } else {
+        contentHTML += `<p class="mt-3">No outgoing links</p>`;
+    }
+    
+    contentHTML += `
+        </div>
+      </div>`;
+    
+    nodeInfoContainer.innerHTML = contentHTML;
+    
+    // Listener per il pulsante di chiusura della card
+    document.getElementById("close-node-info").addEventListener("click", () => {
+        nodeInfoContainer.style.display = "none";
     });
 }
 
@@ -302,8 +404,6 @@ function deselectNode(link, node) {
 // ============================================
 // EVENT LISTENERS PER L'INTERAZIONE CON L'UTENTE
 // ============================================
-
-// Upload del file ZIP
 document.getElementById("fileInput").addEventListener("change", function(event) {
     const file = event.target.files[0];
     if (file) {
@@ -315,7 +415,6 @@ document.getElementById("fileInput").addEventListener("change", function(event) 
     }
 });
 
-// Ricerca (filtra i nodi in base al testo)
 document.getElementById("searchInput").addEventListener("input", function(event) {
     let searchText = event.target.value.toLowerCase();
     
@@ -344,7 +443,6 @@ document.getElementById("searchInput").addEventListener("input", function(event)
     visualizeGraph(filteredNodes, filteredLinks);
 });
 
-// Toggle per il raggruppamento dei nodi
 document.getElementById("toggleGrouping").addEventListener("click", function() {
     groupingEnabled = !groupingEnabled;
     let button = document.getElementById("toggleGrouping");
@@ -372,8 +470,6 @@ document.getElementById("toggleGrouping").addEventListener("click", function() {
     visualizeGraph(filteredNodes, filteredLinks);
 });
 
-// REGISTRAZIONE DEI TOGGLE PER LE ETICHETTE (UNA SOLA VOLTA)
-// Toggle etichette nodi
 document.getElementById("toggleNodeLabels").addEventListener("click", function() {
     toggleButton("toggleNodeLabels", { value: showNodeLabels }, () => {
         showNodeLabels = !showNodeLabels;
@@ -381,10 +477,25 @@ document.getElementById("toggleNodeLabels").addEventListener("click", function()
     });
 });
 
-// Toggle etichette archi
 document.getElementById("toggleLinkLabels").addEventListener("click", function() {
     toggleButton("toggleLinkLabels", { value: showLinkLabels }, () => {
         showLinkLabels = !showLinkLabels;
         d3.selectAll(".link-label").style("display", showLinkLabels ? "block" : "none");
     });
+});
+
+document.getElementById("search-icon").addEventListener("click", function() {
+    const searchInput = document.getElementById("searchInput");
+    const isExpanded = searchInput.style.width === "200px"; // Verifica se la barra di ricerca è espansa
+    
+    if (isExpanded) {
+        // Nascondi la barra di ricerca
+        searchInput.style.width = "0";
+        searchInput.style.opacity = "0";
+    } else {
+        // Espandi la barra di ricerca
+        searchInput.style.width = "200px";
+        searchInput.style.opacity = "1";
+        searchInput.focus(); // Aggiunge il focus al campo di ricerca
+    }
 });
