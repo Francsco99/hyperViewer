@@ -19,7 +19,10 @@ document.addEventListener("DOMContentLoaded", function() {
     // Check if the tutorial has already been shown
     if (!getCookie("tutorialShown")) {
         showTutorial();
-        setCookie("tutorialShown", "true", 365);  // Set the cookie for 1 year
+        // Salva il cookie tutorial solo se l'utente non ha rifiutato i cookie (cookiesAccepted !== "false")
+        if (getCookie("cookiesAccepted") !== "false") {
+            setCookie("tutorialShown", "true", 365);  // Set the cookie for 1 year
+        }
     }
 
     // Aggiunge il listener all'icona info per mostrare il tutorial al click
@@ -83,10 +86,10 @@ function showTutorial() {
         }
     }
 
-    // Aggiunge il listener per chiudere il tutorial con ESC
+    // Add the listener to close the tutorial with ESC
     document.addEventListener("keydown", handleTutorialKeydown);
 
-    // Listener per il pulsante di chiusura del tutorial
+    // Listener for the close button
     document.getElementById("close-tutorial").addEventListener("click", function() {
         document.getElementById("tutorial-overlay").remove();
         document.removeEventListener("keydown", handleTutorialKeydown);

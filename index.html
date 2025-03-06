@@ -50,12 +50,20 @@
     <div id="graph-container" class="row flex-grow-1">
         <div id="sample-graph"></div>
     </div>
-</div>
+  </div>
+
+  <!-- Cookie Disclaimer -->
+  <div id="cookieDisclaimer" style="position: fixed; bottom: 0; left: 0; width: 100%; background: #f8f9fa; padding: 15px; text-align: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.2); z-index: 9999;">
+    <span>🍪 This website uses cookies to enhance your browsing experience. By continuing to browse, you accept their use.</span>
+    <button id="acceptCookies" class="btn btn-primary btn-sm ms-3">Accept</button>
+    <button id="rejectCookies" class="btn btn-secondary btn-sm ms-3">Reject</button>
+  </div>
 
   <!-- Bootstrap JS e Popper.js -->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js"></script>
   <!-- Script per il grafo di esempio -->
   <script src="assets/js/sampleGraph.js"></script>
+  <script src="assets/js/cookies.js"></script>
 </body>
 </html>
