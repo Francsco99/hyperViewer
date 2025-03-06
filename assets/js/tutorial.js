@@ -49,7 +49,7 @@ function showTutorial() {
                 <p>This application helps you visualize and analyze interactive graphs.</p>
                 <ul style="text-align: left; font-size: 16px; line-height: 1.8;">
                     <li>📂 <strong>Upload</strong> a ZIP file containing HTML pages.</li>
-                    <li>🔎 <strong>Search</strong> for nodes by name.</li>
+                    <li>🔎 <strong>Filter</strong> nodes by their name.</li>
                     <li>💡 <strong>Toggle labels</strong> for nodes and links.</li>
                     <li>🧩 <strong>Group nodes</strong> with the same name.</li>
                     <li>👆 <strong>Click on a node</strong> to see its details.</li>
