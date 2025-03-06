@@ -24,17 +24,12 @@ for (let i = 0; i < nodeCount; i++) {
 }
 
 // Palette di colori pastello (saranno assegnati a rotazione)
+
 const pastelColors = [
-    "#ffb3ba", // rosa pastello
-    "#ffdfba", // arancione pastello
-    "#ffffba", // giallo pastello
-    "#baffc9", // verde pastello
-    "#bae1ff", // azzurro pastello
-    "#c9c9ff", // lilla pastello
-    "#ffccf9", // rosa sfumato
-    "#ccf9ff", // celeste
-    "#f9ffcc", // verde chiaro
-    "#ccfffb"  // turchese chiaro
+    "#3fa7d6",
+    "#ee6352",
+    "#59cd90",
+    "#fac05e"
 ];
 
 // Crea la simulazione con forze per il layout a rete (force-directed)
@@ -51,7 +46,7 @@ simulation.alphaDecay(0);   // Disattiva la diminuzione automatica dell'alpha
 
 // Disegna i collegamenti
 const link = svg.append("g")
-                .attr("stroke", "#999")
+                .attr("stroke", "#9f9d9d")
                 .attr("stroke-opacity", 0.6)
                 .selectAll("line")
                 .data(links)
