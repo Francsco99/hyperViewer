@@ -199,9 +199,13 @@ function visualizeGraph(nodes, links) {
     let nodeGroup = container.append("g").attr("class", "nodes");
 
     simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(150))
-        .force("charge", d3.forceManyBody().strength(-400))
-        .force("center", d3.forceCenter(width / 2, height / 2));
+        .force("link", d3.forceLink(links).id(d => d.id).distance(300))
+        .force("charge", d3.forceManyBody().strength(-600))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        // Carica centrale fittizia: forza di attrazione verso il centro
+        .force("x", d3.forceX(width / 2).strength(0.05))
+        .force("y", d3.forceY(height / 2).strength(0.05));
+
 
     // Crea gli archi
     let link = linkGroup.selectAll("line")
@@ -310,6 +314,48 @@ function visualizeGraph(nodes, links) {
 // ============================================
 // FUNZIONI DI INTERAZIONE E DI DRAG
 // ============================================
+
+function updateActiveCounter() {
+    let count = 0;
+    if (document.getElementById("toggleNodeLabels").checked) count++;
+    if (document.getElementById("toggleLinkLabels").checked) count++;
+    if (document.getElementById("toggleGrouping").checked) count++;
+    document.getElementById("activeCounterBadge").innerText = count;
+  }
+  
+  // Imposta gli event listener per i form-switch usando i form-switch di Bootstrap
+  document.getElementById("toggleNodeLabels").addEventListener("change", function() {
+      showNodeLabels = this.checked;
+      d3.selectAll(".node-label").style("display", showNodeLabels ? "block" : "none");
+      updateActiveCounter();
+  });
+  
+  document.getElementById("toggleLinkLabels").addEventListener("change", function() {
+      showLinkLabels = this.checked;
+      d3.selectAll(".link-label").style("display", showLinkLabels ? "block" : "none");
+      updateActiveCounter();
+  });
+  
+  document.getElementById("toggleGrouping").addEventListener("change", function() {
+      groupingEnabled = this.checked;
+      if (groupingEnabled) {
+           let grouped = groupGraphData(originalNodesData, originalLinksData);
+           nodesData = grouped.nodes;
+           linksData = grouped.links;
+      } else {
+           nodesData = originalNodesData;
+           linksData = originalLinksData;
+      }
+      filteredNodes = nodesData;
+      filteredLinks = linksData;
+      visualizeGraph(filteredNodes, filteredLinks);
+      updateActiveCounter();
+  });
+  
+  // Chiamata iniziale per impostare il counter al caricamento
+  updateActiveCounter();
+
+  
 function dragStarted(event, d) {
     if (!event.active) simulation.alphaTarget(0.3).restart();
     d.fx = d.x;
@@ -488,20 +534,18 @@ document.getElementById("searchInput").addEventListener("input", function(event)
     visualizeGraph(filteredNodes, filteredLinks);
 });
 
-document.getElementById("toggleGrouping").addEventListener("click", function() {
-    groupingEnabled = !groupingEnabled;
-    let button = document.getElementById("toggleGrouping");
-    let isOn = button.getAttribute("data-state") === "on";
-    if (isOn) {
-         button.classList.remove("fa-toggle-on");
-         button.classList.add("fa-toggle-off");
-         button.setAttribute("data-state", "off");
-    } else {
-         button.classList.remove("fa-toggle-off");
-         button.classList.add("fa-toggle-on");
-         button.setAttribute("data-state", "on");
-    }
-    // Aggiorna i dati in base allo stato del raggruppamento
+document.getElementById("toggleNodeLabels").addEventListener("change", function() {
+    showNodeLabels = this.checked;
+    d3.selectAll(".node-label").style("display", showNodeLabels ? "block" : "none");
+});
+
+document.getElementById("toggleLinkLabels").addEventListener("change", function() {
+    showLinkLabels = this.checked;
+    d3.selectAll(".link-label").style("display", showLinkLabels ? "block" : "none");
+});
+
+document.getElementById("toggleGrouping").addEventListener("change", function() {
+    groupingEnabled = this.checked;
     if (groupingEnabled) {
          let grouped = groupGraphData(originalNodesData, originalLinksData);
          nodesData = grouped.nodes;
@@ -513,20 +557,6 @@ document.getElementById("toggleGrouping").addEventListener("click", function() {
     filteredNodes = nodesData;
     filteredLinks = linksData;
     visualizeGraph(filteredNodes, filteredLinks);
-});
-
-document.getElementById("toggleNodeLabels").addEventListener("click", function() {
-    toggleButton("toggleNodeLabels", { value: showNodeLabels }, () => {
-        showNodeLabels = !showNodeLabels;
-        d3.selectAll(".node-label").style("display", showNodeLabels ? "block" : "none");
-    });
-});
-
-document.getElementById("toggleLinkLabels").addEventListener("click", function() {
-    toggleButton("toggleLinkLabels", { value: showLinkLabels }, () => {
-        showLinkLabels = !showLinkLabels;
-        d3.selectAll(".link-label").style("display", showLinkLabels ? "block" : "none");
-    });
 });
 
 document.getElementById("search-icon").addEventListener("click", function() {
@@ -544,3 +574,21 @@ document.getElementById("search-icon").addEventListener("click", function() {
         searchInput.focus(); // Aggiunge il focus al campo di ricerca
     }
 });
+
+document.getElementById("linkDistanceSlider").addEventListener("input", function() {
+    const newDistance = +this.value;
+    if (simulation && simulation.force("link")) {
+        simulation.force("link").distance(newDistance);
+        simulation.alpha(1).restart();
+    }
+});
+
+document.getElementById("chargeStrengthSlider").addEventListener("input", function() {
+    const newCharge = +this.value;
+    if (simulation && simulation.force("charge")) {
+        simulation.force("charge").strength(newCharge);
+        simulation.alpha(1).restart();
+    }
+});
+
+
