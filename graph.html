@@ -26,18 +26,22 @@
     <link rel="manifest" href="favicon/site.webmanifest">
 </head>
 <body>
-
     <!-- Toolbar -->
     <nav class="navbar navbar-light">
         <div class="container-fluid d-flex align-items-center">
-            
+            <!-- Logo -->
             <a class="navbar-brand" href="index.html">
                 <img src="assets/images/binoculars_logo.png" alt="Logo">
             </a>
+
+            <!-- Icona info per il tutorial -->
+            <div class="d-flex align-items-center mx-3">
+                <i id="infoIcon" class="fa-solid fa-circle-info toggle-switch" style="cursor: pointer;"></i>
+            </div>
     
             <!-- Icona per la barra di ricerca -->
             <div id="search-container" class="d-flex align-items-center ms-3">
-                <i id="search-icon" class="fa-solid fa-magnifying-glass"></i>
+                <i id="search-icon" class="fa-solid fa-magnifying-glass toggle-switch"></i>
                 <input type="text" id="searchInput" class="ms-2 form-control" placeholder="Search nodes...">
             </div>
     

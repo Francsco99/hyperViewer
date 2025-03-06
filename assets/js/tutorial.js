@@ -21,6 +21,9 @@ document.addEventListener("DOMContentLoaded", function() {
         showTutorial();
         setCookie("tutorialShown", "true", 365);  // Set the cookie for 1 year
     }
+
+    // Aggiunge il listener all'icona info per mostrare il tutorial al click
+    document.getElementById("infoIcon").addEventListener("click", showTutorial);
 });
 
 // Function to display the tutorial
