@@ -11,6 +11,8 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
       <!-- JSZip -->
       <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+      <!-- jQuery -->
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
       <!-- Custom CSS -->
       <link rel="stylesheet" href="assets/css/graph.css">
       <!-- Favicon -->
@@ -25,7 +27,7 @@
          <div class="container-fluid d-flex align-items-center">
             <!-- Logo e barra di ricerca-->
             <div id="search-container" class="navbar-brand d-flex align-items-center ms-3">
-               <img id="search-icon" src="assets/images/binoculars_logo.png" alt="Logo">
+               <img id="search-icon" src="assets/images/binoculars_logo.png" alt="Logo" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Click to search">
                <input type="text" id="searchInput" class="ms-2 form-control" placeholder="Search nodes...">
             </div>
             <!-- Icona per la barra di ricerca 

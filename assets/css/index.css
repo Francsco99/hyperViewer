@@ -12,6 +12,13 @@
   max-height: 40px;
 }
 
+.logo-anchor img{
+  transition: transform 0.5s ease;
+}
+
+.logo-anchor img:hover{
+  transform: scaleX(-1); 
+}
 #text-container {
   position: absolute;
   top: 50%;
@@ -22,6 +29,12 @@
   background: rgba(255, 255, 255, 0.5); /* Sfondo semi-trasparente per migliorare leggibilità */
   border-radius: 10px;
   backdrop-filter: blur(5px);
+  pointer-events: none;
+}
+
+#text-container button,
+#text-container a {
+  pointer-events: auto;
 }
 
 .main-title{

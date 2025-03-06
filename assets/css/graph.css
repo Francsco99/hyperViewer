@@ -67,13 +67,27 @@ body {
     transition: width 0.3s ease, opacity 0.3s ease;
 }
 
-#search-icon{
+/* Impostazioni di transizione per l'immagine */
+#search-icon {
+    transition: transform 0.3s ease;
     cursor: pointer;
+  }
+
+/* Quando il contenitore è attivo, l'immagine viene zoomata e il box di ricerca viene mostrato */
+#search-container.active #search-icon {
+    transform: scale(1.1); /* Zoom del 20% */
 }
 
 svg {
     width: 100%;
     height: 100%;
+}
+
+i{
+    transition: transform 0.3s ease;
+}
+i:hover{
+    transform: scale(1.1);
 }
 
 /*LINKS*/

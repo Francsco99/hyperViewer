@@ -607,3 +607,17 @@ document.addEventListener("DOMContentLoaded", function() {
     // Aggiunge il listener all'icona info per mostrare il tutorial
     document.getElementById("infoIcon").addEventListener("click", showTutorial);
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+
+document.getElementById("search-icon").addEventListener("click", function() {
+    var container = document.getElementById("search-container");
+    // Alterna la classe "active" sul container
+    container.classList.toggle("active");
+  });
+  
