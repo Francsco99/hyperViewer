@@ -16,7 +16,12 @@ body {
 
 .navbar-brand img {
     max-height: 40px;
-  }
+}
+
+.navbar-icon{
+    font-size: 1.5rem;
+    cursor: pointer;
+}
 
 #graph-container {
     width: 100vw;
