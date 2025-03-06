@@ -1,22 +1,25 @@
 // ============================================
-// VARIABILI GLOBALI
+// GLOBAL VARIABLES
 // ============================================
 let selectedNode = null;
-let showNodeLabels = true;
-let showLinkLabels = false;
-let groupingEnabled = false;  // Raggruppamento disattivato di default
+let showNodeLabels = true;       // Visualizza le etichette dei nodi
+let showLinkLabels = false;      // Visualizza le etichette dei link
+let groupingEnabled = false;     // Raggruppamento disattivato di default
 
-let nodesData = [];
-let linksData = [];
-let filteredNodes = [];
-let filteredLinks = [];
-let originalNodesData = [];  // Dati originali (non raggruppati)
-let originalLinksData = [];
-let simulation;
+let nodesData = [];              // Dati dei nodi visualizzati (eventualmente raggruppati)
+let linksData = [];              // Dati dei link visualizzati (eventualmente raggruppati)
+let filteredNodes = [];          // Nodi filtrati (per ricerca)
+let filteredLinks = [];          // Link filtrati (per ricerca)
+let originalNodesData = [];      // Dati originali dei nodi (non raggruppati)
+let originalLinksData = [];      // Dati originali dei link (non raggruppati)
+let simulation;                  // Variabile per la simulazione D3
 
 // ============================================
-// FUNZIONI DI UTILITÀ
+// UTILITY FUNCTIONS
 // ============================================
+/**
+ * Risolve un percorso relativo in base al percorso base.
+ */
 function resolvePath(base, href) {
     let baseParts = base.split("/").slice(0, -1);
     let hrefParts = href.split("/");
@@ -24,7 +27,10 @@ function resolvePath(base, href) {
     return path.replace(/\/\.\//g, "/").replace(/\/[^/]+\/\.\.\//g, "/");
 }
 
-// Funzione toggle generica (spostata in ambito globale)
+/**
+ * (Opzionale) Funzione toggle generica per vecchie icone.
+ * Non usata con i form-switch di Bootstrap.
+ */
 function toggleButton(buttonId, stateVariable, updateFunction) {
     let button = document.getElementById(buttonId);
     let isOn = button.getAttribute("data-state") === "on";
@@ -44,14 +50,17 @@ function toggleButton(buttonId, stateVariable, updateFunction) {
 }
 
 // ============================================
-// FUNZIONI DI RAGGRUPPAMENTO
+// GROUPING FUNCTIONS
 // ============================================
+/**
+ * Raggruppa i nodi e i link basandosi sul "basepath".
+ * Se un nodo è un anchor (id che inizia con "#") ed ha una proprietà baseFile, 
+ * allora il gruppo è rappresentato da baseFile.
+ */
 function groupGraphData(nodes, links) {
-    // Costruiamo una mappa dei gruppi basata sul "basepath"
-    // Se un nodo è un anchor (id che inizia con "#") ed ha una proprietà baseFile,
-    // allora il gruppo è rappresentato da baseFile.
     let groupMapping = {};
     let groupedNodesObj = {};
+
     nodes.forEach(node => {
         let groupId;
         if (node.id.charAt(0) === "#" && node.baseFile) {
@@ -65,17 +74,16 @@ function groupGraphData(nodes, links) {
             groupedNodesObj[groupId] = { 
                 id: groupId, 
                 label: groupId,
-                // Conserva tutti i nodi originali appartenenti a questo gruppo
-                originalNodes: [node]
+                originalNodes: [node] // Conserva tutti i nodi originali
             };
         } else {
             groupedNodesObj[groupId].originalNodes.push(node);
         }
     });
-    let groupedNodes = Object.values(groupedNodesObj);
 
-    // Raggruppa i link: usa la mappa groupMapping per sostituire source e target
+    let groupedNodes = Object.values(groupedNodesObj);
     let groupedLinksObj = {};
+
     links.forEach(link => {
         let src = (typeof link.source === "object") ? link.source.id : link.source;
         let tgt = (typeof link.target === "object") ? link.target.id : link.target;
@@ -96,18 +104,22 @@ function groupGraphData(nodes, links) {
             }
         }
     });
-    let groupedLinks = Object.values(groupedLinksObj);
 
+    let groupedLinks = Object.values(groupedLinksObj);
     return { nodes: groupedNodes, links: groupedLinks };
 }
 
 // ============================================
-// FUNZIONI DI PROCESSING DEI DATI
+// DATA PROCESSING FUNCTIONS
 // ============================================
+/**
+ * Processa il file ZIP contenente le pagine HTML e crea i dati per il grafo.
+ */
 async function processZip(zip) {
     let nodes = {};
     let links = [];
 
+    // Cicla su tutti i file del ZIP
     for (const fileName of Object.keys(zip.files)) {
         if (fileName.endsWith(".html")) {
             let content = await zip.files[fileName].async("text");
@@ -126,15 +138,14 @@ async function processZip(zip) {
                     nodes["web"] = { id: "web", label: "Web" };
                     links.push({ source: fileName, target: "web", label: text });
                 } else if (href.charAt(0) === "#") {
-                    // href che rimanda ad una sezione della stessa pagina:
-                    // Imposta anche la proprietà baseFile per poter raggruppare
-                    let targetAnchor = href; // ad esempio "#info"
+                    // Per gli anchor interni, imposta baseFile per raggruppamento
+                    let targetAnchor = href;
                     if (!nodes[targetAnchor]) {
                         nodes[targetAnchor] = { 
                             id: targetAnchor, 
                             label: targetAnchor, 
                             isAnchor: true,
-                            baseFile: fileName  // memorizza il file di provenienza
+                            baseFile: fileName
                         };
                     } else {
                         nodes[targetAnchor].isAnchor = true;
@@ -144,7 +155,7 @@ async function processZip(zip) {
                     }
                     links.push({ source: fileName, target: targetAnchor, label: text });
                 } else {
-                    // href relativo ad un'altra pagina o percorso
+                    // Per href relativi
                     let targetFile = resolvePath(fileName, href);
                     if (!nodes[targetFile]) nodes[targetFile] = { id: targetFile, label: targetFile };
                     links.push({ source: fileName, target: targetFile, label: text });
@@ -153,14 +164,13 @@ async function processZip(zip) {
         }
     }
 
+    // Imposta i dati globali
     nodesData = Object.values(nodes);
     linksData = links;
-
-    // Salva i dati originali per poter tornare alla visualizzazione non raggruppata
     originalNodesData = nodesData;
     originalLinksData = linksData;
 
-    // Applica il raggruppamento se abilitato
+    // Se il raggruppamento è abilitato, aggiorna i dati
     if (groupingEnabled) {
         let grouped = groupGraphData(originalNodesData, originalLinksData);
         nodesData = grouped.nodes;
@@ -173,20 +183,23 @@ async function processZip(zip) {
 }
 
 // ============================================
-// FUNZIONI DI VISUALIZZAZIONE DEL GRAFO
+// GRAPH VISUALIZATION FUNCTIONS
 // ============================================
+/**
+ * Visualizza il grafo usando D3.
+ */
 function visualizeGraph(nodes, links) {
-    // Pulisce l'area SVG e imposta dimensioni
+    // Seleziona l'elemento SVG e lo pulisce
     const svg = d3.select("svg");
     svg.selectAll("*").remove();
     let width = document.getElementById("graph-container").clientWidth;
     let height = document.getElementById("graph-container").clientHeight;
     svg.attr("width", width).attr("height", height);
 
-    // Crea un contenitore per l'intero grafo, utile per il panning e lo zoom
+    // Crea un container per il grafo, utile per zoom e panning
     let container = svg.append("g");
 
-    // Abilita zoom e panning sull'elemento SVG
+    // Abilita zoom e panning
     svg.call(d3.zoom()
         .scaleExtent([0.1, 4])
         .on("zoom", (event) => {
@@ -194,25 +207,25 @@ function visualizeGraph(nodes, links) {
         })
     );
 
-    // Crea gruppi per link e nodi all'interno del container zoomabile
+    // Crea gruppi per link e nodi
     let linkGroup = container.append("g").attr("class", "links");
     let nodeGroup = container.append("g").attr("class", "nodes");
 
+    // Crea la simulazione con le forze (inclusa la forza centrale fittizia)
     simulation = d3.forceSimulation(nodes)
         .force("link", d3.forceLink(links).id(d => d.id).distance(300))
         .force("charge", d3.forceManyBody().strength(-600))
         .force("center", d3.forceCenter(width / 2, height / 2))
-        // Carica centrale fittizia: forza di attrazione verso il centro
         .force("x", d3.forceX(width / 2).strength(0.05))
         .force("y", d3.forceY(height / 2).strength(0.05));
 
-
-    // Crea gli archi
+    // Crea i link (linee)
     let link = linkGroup.selectAll("line")
         .data(links)
         .enter().append("line")
         .attr("class", "link");
 
+    // Crea le etichette dei link
     let linkText = linkGroup.selectAll("text")
         .data(links)
         .enter().append("text")
@@ -223,13 +236,12 @@ function visualizeGraph(nodes, links) {
         .text(d => d.label)
         .style("display", showLinkLabels ? "block" : "none");
 
-    // Crea i nodi senza definire inline il colore
+    // Crea i nodi (cerchi) con classi diverse in base al tipo
     let node = nodeGroup.selectAll("circle")
         .data(nodes)
         .enter().append("circle")
         .attr("class", d => {
             if (d.id === "web") return "node web";
-            // Assegna la classe "anchor-node" se il nodo è un anchor, altrimenti "normal-node"
             return d.isAnchor ? "node anchor-node" : "node normal-node";
         })
         .attr("r", 10)
@@ -242,7 +254,7 @@ function visualizeGraph(nodes, links) {
                 .style("left", event.pageX + 5 + "px")
                 .style("top", event.pageY + 5 + "px")
                 .style("display", "block")
-                .html(`Nodo: ${d.label}`);
+                .html(`Node: ${d.label}`);
         })
         .on("mouseout", function() {
             d3.select("#tooltip").style("display", "none");
@@ -263,9 +275,8 @@ function visualizeGraph(nodes, links) {
         .style("font-size", "12px")
         .style("display", showNodeLabels ? "block" : "none");
 
-    // Tooltip sugli archi: se ci sono archi multipli tra gli stessi nodi, li mostra come lista
+    // Gestione tooltip per i link
     link.on("mouseover", function(event, d) {
-        // Filtra in linksData gli archi con lo stesso source e target
         let sameLinks = linksData.filter(linkObj => {
             let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
             let tgt = (typeof linkObj.target === "object") ? linkObj.target.id : linkObj.target;
@@ -294,6 +305,7 @@ function visualizeGraph(nodes, links) {
     // Deseleziona nodo cliccando sullo sfondo
     svg.on("click", () => deselectNode(link, node));
 
+    // Aggiorna la simulazione ad ogni tick
     simulation.on("tick", () => {
         link.attr("x1", d => d.source.x)
             .attr("y1", d => d.source.y)
@@ -312,95 +324,65 @@ function visualizeGraph(nodes, links) {
 }
 
 // ============================================
-// FUNZIONI DI INTERAZIONE E DI DRAG
+// DRAG EVENT HANDLERS
 // ============================================
-
-function updateActiveCounter() {
-    let count = 0;
-    if (document.getElementById("toggleNodeLabels").checked) count++;
-    if (document.getElementById("toggleLinkLabels").checked) count++;
-    if (document.getElementById("toggleGrouping").checked) count++;
-    document.getElementById("activeCounterBadge").innerText = count;
-  }
-  
-  // Imposta gli event listener per i form-switch usando i form-switch di Bootstrap
-  document.getElementById("toggleNodeLabels").addEventListener("change", function() {
-      showNodeLabels = this.checked;
-      d3.selectAll(".node-label").style("display", showNodeLabels ? "block" : "none");
-      updateActiveCounter();
-  });
-  
-  document.getElementById("toggleLinkLabels").addEventListener("change", function() {
-      showLinkLabels = this.checked;
-      d3.selectAll(".link-label").style("display", showLinkLabels ? "block" : "none");
-      updateActiveCounter();
-  });
-  
-  document.getElementById("toggleGrouping").addEventListener("change", function() {
-      groupingEnabled = this.checked;
-      if (groupingEnabled) {
-           let grouped = groupGraphData(originalNodesData, originalLinksData);
-           nodesData = grouped.nodes;
-           linksData = grouped.links;
-      } else {
-           nodesData = originalNodesData;
-           linksData = originalLinksData;
-      }
-      filteredNodes = nodesData;
-      filteredLinks = linksData;
-      visualizeGraph(filteredNodes, filteredLinks);
-      updateActiveCounter();
-  });
-  
-  // Chiamata iniziale per impostare il counter al caricamento
-  updateActiveCounter();
-
-  
 function dragStarted(event, d) {
+    // Se la simulazione è attiva, aumenta l'alpha per animare il drag
     if (!event.active) simulation.alphaTarget(0.3).restart();
+    // Fissa il nodo alla sua posizione attuale
     d.fx = d.x;
     d.fy = d.y;
 }
 
 function dragged(event, d) {
+    // Aggiorna la posizione fissata del nodo
     d.fx = event.x;
     d.fy = event.y;
 }
 
 function dragEnded(event, d) {
+    // Abbassa l'alpha target dopo il drag
     if (!event.active) simulation.alphaTarget(0);
+    // Libera il nodo (per la simulazione) – 
+    // Se vuoi che il nodo rimanga fisso, commenta le seguenti righe
     d.fx = null;
     d.fy = null;
 }
 
+// ============================================
+// NODE SELECTION AND DETAILS CARD
+// ============================================
+/**
+ * Gestisce la selezione di un nodo, evidenziandolo, mostrando le sue etichette e 
+ * costruendo una card con i dettagli e i link in uscita.
+ */
 function selectNode(id, link, node) {
     selectedNode = id;
-    // Evidenzia il nodo selezionato e i link relativi
+    // Evidenzia il nodo selezionato e i link correlati
     node.classed("selected", d => d.id === id);
     link.classed("highlighted", d => d.source.id === id);
     
-    // Rimuove il grassetto da tutte le etichette dei nodi
+    // Rimuove il grassetto da tutte le etichette e lo applica al nodo selezionato
     d3.selectAll(".node-label").classed("bold-label", false);
-    
-    // Applica il grassetto all'etichetta del nodo selezionato
     d3.selectAll(".node-label")
         .filter(d => d.id === id)
         .classed("bold-label", true);
     
+    // Mostra la card dei dettagli
     const nodeInfoContainer = document.getElementById("node-info");
     nodeInfoContainer.style.display = "block";
     
-    // Se il nodo selezionato è raggruppato, recupera gli id originali
+    // Se il nodo è raggruppato, recupera gli id originali
     let groupNode = nodesData.find(n => n.id === id && n.originalNodes);
     let sourceIds = groupNode ? groupNode.originalNodes.map(n => n.id) : [id];
     
-    // Usa i dati originali per i link in uscita
+    // Filtra i link in uscita basandosi sugli id originali
     let outgoingLinks = originalLinksData.filter(linkObj => {
         let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
         return sourceIds.includes(src);
     });
     
-    // Costruisci il contenuto HTML della card usando Bootstrap
+    // Costruisce l'HTML della card dei dettagli usando Bootstrap
     let contentHTML = `
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -418,7 +400,7 @@ function selectNode(id, link, node) {
         outgoingLinks.forEach(linkObj => {
             let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
             let tgt = (typeof linkObj.target === "object") ? linkObj.target.id : linkObj.target;
-            // Aggiungiamo data attributes, una classe e lo stile del cursore
+            // Aggiunge data attributes per identificare il link e abilita il cursore pointer
             contentHTML += `<li class="list-group-item link-item" data-source="${src}" data-target="${tgt}" style="cursor: pointer;">
                               <strong>${tgt}</strong> <br> <em>${linkObj.label}</em>
                             </li>`;
@@ -435,40 +417,23 @@ function selectNode(id, link, node) {
     
     nodeInfoContainer.innerHTML = contentHTML;
     
-    // Listener per il pulsante di chiusura della card
+    // Aggiunge un listener per chiudere la card
     document.getElementById("close-node-info").addEventListener("click", () => {
         nodeInfoContainer.style.display = "none";
-        // Rimuove l'evidenziazione dell'arco selezionato
-        d3.selectAll(".link").classed("selected", false);
+        deselectNode(link,node);
     });
     
-    // Aggiunge listener agli elementi della lista per hover e click
+    // Aggiunge un listener per il click su ciascun elemento della lista dei link
     document.querySelectorAll(".link-item").forEach(item => {
-        // Al passaggio del mouse, cambia lo sfondo per dare un feedback visivo
-        item.addEventListener("mouseover", function() {
-            // Applica un colore di background solo se non è già attivo
-            if (!this.classList.contains("active")) {
-                this.style.backgroundColor = "#f0f0f0";
-            }
-        });
-        item.addEventListener("mouseout", function() {
-            // Rimuove il colore di background se non è attivo
-            if (!this.classList.contains("active")) {
-                this.style.backgroundColor = "";
-            }
-        });
-        // Al click, evidenzia l'elemento e l'arco corrispondente
         item.addEventListener("click", function() {
-            // Rimuove lo stile "active" da tutti gli elementi della lista
+            // Rimuove la classe "active" da tutti gli elementi della lista
             document.querySelectorAll(".link-item").forEach(li => {
                 li.classList.remove("active");
-                li.style.backgroundColor = "";
             });
-            // Aggiunge la classe active e uno sfondo differente per indicare la selezione
+            // Aggiunge la classe "active" per indicare la selezione
             this.classList.add("active");
-            this.style.backgroundColor = "#d0d0d0";
             
-            // Rimuove l'evidenziazione da tutti gli archi e evidenzia quello selezionato
+            // Evidenzia il link corrispondente nel grafo
             d3.selectAll(".link").classed("selected", false);
             const src = this.getAttribute("data-source");
             const tgt = this.getAttribute("data-target");
@@ -481,21 +446,59 @@ function selectNode(id, link, node) {
     });
 }
 
+/**
+ * Deseleziona il nodo e nasconde la card dei dettagli.
+ */
 function deselectNode(link, node) {
     selectedNode = null;
     node.classed("selected", false);
     link.classed("highlighted", false);
-    link.classed("selected",false);
-
+    link.classed("selected", false);
     document.getElementById("node-info").style.display = "none";
-    document.getElementById("node-name").innerHTML = '';
-    document.getElementById("node-links").innerHTML = '';
+    // Se esistono elementi per nome e link, li resetta (se presenti)
+    if(document.getElementById("node-name")) document.getElementById("node-name").innerHTML = '';
+    if(document.getElementById("node-links")) document.getElementById("node-links").innerHTML = '';
 }
 
 // ============================================
-// EVENT LISTENERS PER L'INTERAZIONE CON L'UTENTE
+// BADGE COUNTER FOR FORM-SWITCHES
 // ============================================
+/**
+ * Aggiorna il badge counter nel dropdown in base al numero di form-switch attivi.
+ */
+function updateActiveCounter() {
+    let count = 0;
+    if (document.getElementById("toggleNodeLabels").checked) count++;
+    if (document.getElementById("toggleLinkLabels").checked) count++;
+    if (document.getElementById("toggleGrouping").checked) count++;
+    document.getElementById("activeCounterBadge").innerText = count;
+}
+
+// ============================================
+// RESET FORM-SWITCHES FUNCTION
+// ============================================
+/**
+ * Resetta i form-switch ai valori originali.
+ */
+function resetFormSwitches() {
+    showNodeLabels = true;
+    showLinkLabels = false;
+    groupingEnabled = false;
+    document.getElementById("toggleNodeLabels").checked = true;
+    document.getElementById("toggleLinkLabels").checked = false;
+    document.getElementById("toggleGrouping").checked = false;
+    updateActiveCounter();
+}
+
+// ============================================
+// EVENT LISTENERS FOR USER INTERACTION
+// ============================================
+
+// Gestione del caricamento del file ZIP
 document.getElementById("fileInput").addEventListener("change", function(event) {
+    // Resetta i form-switch al caricamento di un nuovo file
+    resetFormSwitches();
+    
     const file = event.target.files[0];
     if (file) {
         const reader = new FileReader();
@@ -506,24 +509,21 @@ document.getElementById("fileInput").addEventListener("change", function(event) 
     }
 });
 
+// Gestione della ricerca (filtraggio dei nodi)
 document.getElementById("searchInput").addEventListener("input", function(event) {
     let searchText = event.target.value.toLowerCase();
-    
     if (searchText === "") {
         filteredNodes = nodesData;
         filteredLinks = linksData;
     } else {
         let searchedNode = nodesData.find(node => node.label.toLowerCase().includes(searchText));
-        
         if (searchedNode) {
             let visibleNodes = new Set();
             visibleNodes.add(searchedNode.id);
-            
             linksData.forEach(link => {
                 if (link.source.id === searchedNode.id) visibleNodes.add(link.target.id);
                 if (link.target.id === searchedNode.id) visibleNodes.add(link.source.id);
             });
-            
             filteredNodes = nodesData.filter(node => visibleNodes.has(node.id));
             filteredLinks = linksData.filter(link => visibleNodes.has(link.source.id) && visibleNodes.has(link.target.id));
         } else {
@@ -534,14 +534,17 @@ document.getElementById("searchInput").addEventListener("input", function(event)
     visualizeGraph(filteredNodes, filteredLinks);
 });
 
+// Gestione dei form-switch per Display Options
 document.getElementById("toggleNodeLabels").addEventListener("change", function() {
     showNodeLabels = this.checked;
     d3.selectAll(".node-label").style("display", showNodeLabels ? "block" : "none");
+    updateActiveCounter();
 });
 
 document.getElementById("toggleLinkLabels").addEventListener("change", function() {
     showLinkLabels = this.checked;
     d3.selectAll(".link-label").style("display", showLinkLabels ? "block" : "none");
+    updateActiveCounter();
 });
 
 document.getElementById("toggleGrouping").addEventListener("change", function() {
@@ -557,24 +560,27 @@ document.getElementById("toggleGrouping").addEventListener("change", function() 
     filteredNodes = nodesData;
     filteredLinks = linksData;
     visualizeGraph(filteredNodes, filteredLinks);
+    updateActiveCounter();
 });
 
+// Imposta il counter iniziale
+updateActiveCounter();
+
+// Gestione della barra di ricerca (espandi/contrae)
 document.getElementById("search-icon").addEventListener("click", function() {
     const searchInput = document.getElementById("searchInput");
-    const isExpanded = searchInput.style.width === "200px"; // Verifica se la barra di ricerca è espansa
-    
+    const isExpanded = searchInput.style.width === "200px";
     if (isExpanded) {
-        // Nascondi la barra di ricerca
         searchInput.style.width = "0";
         searchInput.style.opacity = "0";
     } else {
-        // Espandi la barra di ricerca
         searchInput.style.width = "200px";
         searchInput.style.opacity = "1";
-        searchInput.focus(); // Aggiunge il focus al campo di ricerca
+        searchInput.focus();
     }
 });
 
+// Gestione degli slider per la simulazione
 document.getElementById("linkDistanceSlider").addEventListener("input", function() {
     const newDistance = +this.value;
     if (simulation && simulation.force("link")) {
@@ -591,4 +597,13 @@ document.getElementById("chargeStrengthSlider").addEventListener("input", functi
     }
 });
 
-
+// ============================================
+// INITIALIZATION WHEN DOM IS LOADED
+// ============================================
+document.addEventListener("DOMContentLoaded", function() {
+    // Resetta i form-switch all'avvio della pagina
+    resetFormSwitches();
+    
+    // Aggiunge il listener all'icona info per mostrare il tutorial
+    document.getElementById("infoIcon").addEventListener("click", showTutorial);
+});
