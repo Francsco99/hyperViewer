@@ -1,122 +1,106 @@
 <!DOCTYPE html>
 <html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HyperViewer</title>
-
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- FontAwesome -->
-    <script src="https://kit.fontawesome.com/3f3dd5b20c.js" crossorigin="anonymous"></script>
-
-    <!-- D3 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-    
-    <!-- JSZip -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="assets/css/graph.css">
-
-    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
-    <link rel="manifest" href="favicon/site.webmanifest">
-</head>
-<body>
-    <!-- Toolbar -->
-    <nav class="navbar navbar-light">
-        <div class="container-fluid d-flex align-items-center">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>HyperViewer</title>
+      <!-- Bootstrap CSS -->
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+      <!-- D3 -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+      <!-- JSZip -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+      <!-- Custom CSS -->
+      <link rel="stylesheet" href="assets/css/graph.css">
+      <!-- Favicon -->
+      <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+      <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+      <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+      <link rel="manifest" href="favicon/site.webmanifest">
+   </head>
+   <body>
+      <!-- Toolbar -->
+      <nav class="navbar navbar-light">
+         <div class="container-fluid d-flex align-items-center">
             <!-- Logo e barra di ricerca-->
             <div id="search-container" class="navbar-brand d-flex align-items-center ms-3">
-                <img id="search-icon" src="assets/images/binoculars_logo.png" alt="Logo">
-                <input type="text" id="searchInput" class="ms-2 form-control" placeholder="Search nodes...">
+               <img id="search-icon" src="assets/images/binoculars_logo.png" alt="Logo">
+               <input type="text" id="searchInput" class="ms-2 form-control" placeholder="Search nodes...">
             </div>
-    
             <!-- Icona per la barra di ricerca 
-            <div id="search-container" class="d-flex align-items-center ms-3">
-                <i id="search-icon" class="fa-solid fa-magnifying-glass toggle-switch"></i>
-                <input type="text" id="searchInput" class="ms-2 form-control" placeholder="Search nodes...">
-            </div>
-            -->
-            
+               <div id="search-container" class="d-flex align-items-center ms-3">
+                   <i id="search-icon" class="fa-solid fa-magnifying-glass toggle-switch"></i>
+                   <input type="text" id="searchInput" class="ms-2 form-control" placeholder="Search nodes...">
+               </div>
+               -->
             <!-- Dropdown menu opzioni con badge counter -->
             <div class="dropdown mx-3">
-                <button class="btn btn-secondary dropdown-toggle position-relative" type="button" id="optionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                  Options
-                  <span id="activeCounterBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                    0
-                    <span class="visually-hidden">active options</span>
-                  </span>
-                </button>
-                <ul class="dropdown-menu p-3" aria-labelledby="optionsDropdown" style="min-width: 250px;">
+               <button class="btn btn-secondary dropdown-toggle position-relative" type="button" id="optionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+               Options
+               <span id="activeCounterBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+               0
+               <span class="visually-hidden">active options</span>
+               </span>
+               </button>
+               <ul class="dropdown-menu p-3" aria-labelledby="optionsDropdown" style="min-width: 250px;">
                   <!-- Display Options -->
                   <li>
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" id="toggleNodeLabels" checked>
-                      <label class="form-check-label" for="toggleNodeLabels">Node Labels</label>
-                    </div>
+                     <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggleNodeLabels" checked>
+                        <label class="form-check-label" for="toggleNodeLabels">Node Labels</label>
+                     </div>
                   </li>
                   <li class="mt-2">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" id="toggleLinkLabels">
-                      <label class="form-check-label" for="toggleLinkLabels">Link Labels</label>
-                    </div>
+                     <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggleLinkLabels">
+                        <label class="form-check-label" for="toggleLinkLabels">Link Labels</label>
+                     </div>
                   </li>
                   <li class="mt-2">
-                    <div class="form-check form-switch">
-                      <input class="form-check-input" type="checkbox" id="toggleGrouping">
-                      <label class="form-check-label" for="toggleGrouping">Group Nodes</label>
-                    </div>
+                     <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggleGrouping">
+                        <label class="form-check-label" for="toggleGrouping">Group Nodes</label>
+                     </div>
                   </li>
                   <!-- Divider -->
                   <hr class="dropdown-divider">
                   <!-- Simulation Parameters -->
                   <li class="mt-2">
-                    <label for="linkDistanceSlider" class="form-label mb-0">Link Distance</label>
-                    <input type="range" class="form-range" id="linkDistanceSlider" min="50" max="300" value="150">
+                     <label for="linkDistanceSlider" class="form-label mb-0">Link Distance</label>
+                     <input type="range" class="form-range" id="linkDistanceSlider" min="50" max="300" value="150">
                   </li>
                   <li class="mt-3">
-                    <label for="chargeStrengthSlider" class="form-label mb-0">Charge Strength</label>
-                    <input type="range" class="form-range" id="chargeStrengthSlider" min="-1000" max="0" value="-400">
+                     <label for="chargeStrengthSlider" class="form-label mb-0">Charge Strength</label>
+                     <input type="range" class="form-range" id="chargeStrengthSlider" min="-1000" max="0" value="-400">
                   </li>
-                </ul>
-              </div>
-                
-              
+               </ul>
+            </div>
             <!-- Input per caricamento file zip-->
             <input type="file" id="fileInput" class="form-control w-auto ms-auto" accept=".zip">
-
             <!-- Icona info per il tutorial -->
             <div class="d-flex align-items-center mx-3">
-                <i id="infoIcon" class="fa-solid fa-xl fa-circle-info toggle-switch" style="cursor: pointer;"></i>
+               <i id="infoIcon" class="bi bi-info-circle navbar-icon"></i>
             </div>
-        </div>
-    </nav>
-    
-
-    <!-- Contenitore principale -->
-    <div id="main-container" class="d-flex">
-        <!-- Spazio per il grafo (sinistra) -->
-        <div id="graph-container">
+         </div>
+      </nav>
+      <!-- Contenitore principale -->
+      <div id="main-container" class="d-flex">
+         <!-- Spazio per il grafo (sinistra) -->
+         <div id="graph-container">
             <svg id="graph"></svg>
-        </div>
-
-        <!-- Sidebar (destra) per visualizzare informazioni sul nodo selezionato -->
-        <div id="node-info" class="p-4">
-            
-        </div>
-    </div>
-
-    <div id="tooltip"></div>
-    
-    <script src="assets/js/script.js"></script>
-    <script src="assets/js/tutorial.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
-
-
-</body>
+         </div>
+         <!-- Sidebar (destra) per visualizzare informazioni sul nodo selezionato -->
+         <div id="node-info" class="p-4"></div>
+      </div>
+      <!-- Tooltip nodi e archi -->
+      <div id="tooltip"></div>
+      <!-- Bootstrap JS e Popper.js -->
+      <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js"></script>
+      <!-- Script principale -->
+      <script src="assets/js/script.js"></script>
+      <!-- Script tutorial -->
+      <script src="assets/js/tutorial.js"></script>
+   </body>
 </html>
