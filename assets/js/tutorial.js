@@ -72,7 +72,23 @@ function showTutorial() {
 
     document.body.insertAdjacentHTML("beforeend", tutorialHtml);
 
+    // Function to handle ESC key press
+    function handleTutorialKeydown(e) {
+        if (e.key === "Escape") {
+            let overlay = document.getElementById("tutorial-overlay");
+            if (overlay) {
+                overlay.remove();
+            }
+            document.removeEventListener("keydown", handleTutorialKeydown);
+        }
+    }
+
+    // Aggiunge il listener per chiudere il tutorial con ESC
+    document.addEventListener("keydown", handleTutorialKeydown);
+
+    // Listener per il pulsante di chiusura del tutorial
     document.getElementById("close-tutorial").addEventListener("click", function() {
         document.getElementById("tutorial-overlay").remove();
+        document.removeEventListener("keydown", handleTutorialKeydown);
     });
 }
