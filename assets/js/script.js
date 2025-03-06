@@ -327,16 +327,15 @@ function dragEnded(event, d) {
     d.fy = null;
 }
 
-// Aggiornata la funzione selectNode per mostrare tutte le informazioni originali
 function selectNode(id, link, node) {
     selectedNode = id;
     // Evidenzia il nodo selezionato e i link relativi
     node.classed("selected", d => d.id === id);
     link.classed("highlighted", d => d.source.id === id);
-
+    
     // Rimuove il grassetto da tutte le etichette dei nodi
     d3.selectAll(".node-label").classed("bold-label", false);
-
+    
     // Applica il grassetto all'etichetta del nodo selezionato
     d3.selectAll(".node-label")
         .filter(d => d.id === id)
@@ -348,13 +347,13 @@ function selectNode(id, link, node) {
     // Se il nodo selezionato è raggruppato, recupera gli id originali
     let groupNode = nodesData.find(n => n.id === id && n.originalNodes);
     let sourceIds = groupNode ? groupNode.originalNodes.map(n => n.id) : [id];
-
+    
     // Usa i dati originali per i link in uscita
     let outgoingLinks = originalLinksData.filter(linkObj => {
         let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
         return sourceIds.includes(src);
     });
-
+    
     // Costruisci il contenuto HTML della card usando Bootstrap
     let contentHTML = `
       <div class="card">
@@ -367,14 +366,19 @@ function selectNode(id, link, node) {
     
     if (outgoingLinks.length > 0) {
         contentHTML += `
-          <h6 class="mt-3">Outgoing links:</h6>
-          <ul class="list-group list-group-flush">`;
+          <h6 class="mt-3">Outgoing links ➡️</h6>
+          <div style="max-height: 60vh; overflow-y: auto;">
+            <ul class="list-group list-group-flush">`;
         outgoingLinks.forEach(linkObj => {
             let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
             let tgt = (typeof linkObj.target === "object") ? linkObj.target.id : linkObj.target;
-            contentHTML += `<li class="list-group-item">${src} ➡️ ${tgt} <br>(${linkObj.label})</li>`;
+            // Aggiungiamo data attributes, una classe e lo stile del cursore
+            contentHTML += `<li class="list-group-item link-item" data-source="${src}" data-target="${tgt}" style="cursor: pointer;">
+                              <strong>${tgt}</strong> <br> <em>${linkObj.label}</em>
+                            </li>`;
         });
-        contentHTML += `</ul>`;
+        contentHTML += `</ul>
+          </div>`;
     } else {
         contentHTML += `<p class="mt-3">No outgoing links</p>`;
     }
@@ -388,6 +392,46 @@ function selectNode(id, link, node) {
     // Listener per il pulsante di chiusura della card
     document.getElementById("close-node-info").addEventListener("click", () => {
         nodeInfoContainer.style.display = "none";
+        // Rimuove l'evidenziazione dell'arco selezionato
+        d3.selectAll(".link").classed("selected", false);
+    });
+    
+    // Aggiunge listener agli elementi della lista per hover e click
+    document.querySelectorAll(".link-item").forEach(item => {
+        // Al passaggio del mouse, cambia lo sfondo per dare un feedback visivo
+        item.addEventListener("mouseover", function() {
+            // Applica un colore di background solo se non è già attivo
+            if (!this.classList.contains("active")) {
+                this.style.backgroundColor = "#f0f0f0";
+            }
+        });
+        item.addEventListener("mouseout", function() {
+            // Rimuove il colore di background se non è attivo
+            if (!this.classList.contains("active")) {
+                this.style.backgroundColor = "";
+            }
+        });
+        // Al click, evidenzia l'elemento e l'arco corrispondente
+        item.addEventListener("click", function() {
+            // Rimuove lo stile "active" da tutti gli elementi della lista
+            document.querySelectorAll(".link-item").forEach(li => {
+                li.classList.remove("active");
+                li.style.backgroundColor = "";
+            });
+            // Aggiunge la classe active e uno sfondo differente per indicare la selezione
+            this.classList.add("active");
+            this.style.backgroundColor = "#d0d0d0";
+            
+            // Rimuove l'evidenziazione da tutti gli archi e evidenzia quello selezionato
+            d3.selectAll(".link").classed("selected", false);
+            const src = this.getAttribute("data-source");
+            const tgt = this.getAttribute("data-target");
+            link.filter(d => {
+                let dSrc = (typeof d.source === "object") ? d.source.id : d.source;
+                let dTgt = (typeof d.target === "object") ? d.target.id : d.target;
+                return dSrc === src && dTgt === tgt;
+            }).classed("selected", true);
+        });
     });
 }
 
@@ -395,6 +439,7 @@ function deselectNode(link, node) {
     selectedNode = null;
     node.classed("selected", false);
     link.classed("highlighted", false);
+    link.classed("selected",false);
 
     document.getElementById("node-info").style.display = "none";
     document.getElementById("node-name").innerHTML = '';
