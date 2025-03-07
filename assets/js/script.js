@@ -5,6 +5,8 @@ let selectedNode = null;
 let showNodeLabels = true;       // Visualizza le etichette dei nodi
 let showLinkLabels = false;      // Visualizza le etichette dei link
 let groupingEnabled = false;     // Raggruppamento disattivato di default
+let fixNodesOnDrag = false;
+
 
 let nodesData = [];              // Dati dei nodi visualizzati (eventualmente raggruppati)
 let linksData = [];              // Dati dei link visualizzati (eventualmente raggruppati)
@@ -13,6 +15,11 @@ let filteredLinks = [];          // Link filtrati (per ricerca)
 let originalNodesData = [];      // Dati originali dei nodi (non raggruppati)
 let originalLinksData = [];      // Dati originali dei link (non raggruppati)
 let simulation;                  // Variabile per la simulazione D3
+
+const DEFAULT_LINK_DISTANCE = 300;
+const DEFAULT_CHARGE_STRENGTH = -600;
+document.getElementById("linkDistanceSlider").value = DEFAULT_LINK_DISTANCE;
+document.getElementById("chargeStrengthSlider").value = DEFAULT_CHARGE_STRENGTH;
 
 // ============================================
 // UTILITY FUNCTIONS
@@ -213,8 +220,8 @@ function visualizeGraph(nodes, links) {
 
     // Crea la simulazione con le forze (inclusa la forza centrale fittizia)
     simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(300))
-        .force("charge", d3.forceManyBody().strength(-600))
+        .force("link", d3.forceLink(links).id(d => d.id).distance(DEFAULT_LINK_DISTANCE))
+        .force("charge", d3.forceManyBody().strength(DEFAULT_CHARGE_STRENGTH))
         .force("center", d3.forceCenter(width / 2, height / 2))
         .force("x", d3.forceX(width / 2).strength(0.05))
         .force("y", d3.forceY(height / 2).strength(0.05));
@@ -341,13 +348,17 @@ function dragged(event, d) {
 }
 
 function dragEnded(event, d) {
-    // Abbassa l'alpha target dopo il drag
+    // Abbassa l'alphaTarget dopo il drag
     if (!event.active) simulation.alphaTarget(0);
-    // Libera il nodo (per la simulazione) – 
-    // Se vuoi che il nodo rimanga fisso, commenta le seguenti righe
-    d.fx = null;
-    d.fy = null;
+
+    // Se fixNodesOnDrag è false, liberiamo il nodo
+    // Altrimenti resta fisso (d.fx, d.fy non vengono toccati)
+    if (!fixNodesOnDrag) {
+        d.fx = null;
+        d.fy = null;
+    }
 }
+
 
 // ============================================
 // NODE SELECTION AND DETAILS CARD
@@ -361,28 +372,28 @@ function selectNode(id, link, node) {
     // Evidenzia il nodo selezionato e i link correlati
     node.classed("selected", d => d.id === id);
     link.classed("highlighted", d => d.source.id === id);
-    
+
     // Rimuove il grassetto da tutte le etichette e lo applica al nodo selezionato
     d3.selectAll(".node-label").classed("bold-label", false);
     d3.selectAll(".node-label")
-        .filter(d => d.id === id)
-        .classed("bold-label", true);
-    
+      .filter(d => d.id === id)
+      .classed("bold-label", true);
+
     // Mostra la card dei dettagli
     const nodeInfoContainer = document.getElementById("node-info");
     nodeInfoContainer.style.display = "block";
-    
+
     // Se il nodo è raggruppato, recupera gli id originali
     let groupNode = nodesData.find(n => n.id === id && n.originalNodes);
     let sourceIds = groupNode ? groupNode.originalNodes.map(n => n.id) : [id];
-    
+
     // Filtra i link in uscita basandosi sugli id originali
     let outgoingLinks = originalLinksData.filter(linkObj => {
         let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
         return sourceIds.includes(src);
     });
-    
-    // Costruisce l'HTML della card dei dettagli usando Bootstrap
+
+    // Costruisce l'HTML della card dei dettagli
     let contentHTML = `
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -391,39 +402,48 @@ function selectNode(id, link, node) {
         </div>
         <div class="card-body">
           <p class="card-text"><strong>ID:</strong> ${id}</p>`;
-    
+
     if (outgoingLinks.length > 0) {
         contentHTML += `
           <h6 class="mt-3">Outgoing links ➡️</h6>
           <div style="max-height: 60vh; overflow-y: auto;">
             <ul class="list-group list-group-flush">`;
+
         outgoingLinks.forEach(linkObj => {
             let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
             let tgt = (typeof linkObj.target === "object") ? linkObj.target.id : linkObj.target;
-            // Aggiunge data attributes per identificare il link e abilita il cursore pointer
-            contentHTML += `<li class="list-group-item link-item" data-source="${src}" data-target="${tgt}" style="cursor: pointer;">
-                              <strong>${tgt}</strong> <br> <em>${linkObj.label}</em>
-                            </li>`;
+
+            // Aggiungiamo un pulsante "Seleziona Target"
+            contentHTML += `
+              <li class="list-group-item link-item d-flex justify-content-between align-items-center" data-source="${src}" data-target="${tgt}" style="cursor: pointer;">
+                <div>
+                  <strong>${tgt}</strong> <br> <em>${linkObj.label}</em>
+                </div>
+                <button class="btn btn-sm btn-primary follow-link-btn" data-target="${tgt}" style="margin-left: 8px;">
+                  Select Target
+                </button>
+              </li>`;
         });
+
         contentHTML += `</ul>
           </div>`;
     } else {
         contentHTML += `<p class="mt-3">No outgoing links</p>`;
     }
-    
+
     contentHTML += `
         </div>
       </div>`;
-    
+
     nodeInfoContainer.innerHTML = contentHTML;
-    
+
     // Aggiunge un listener per chiudere la card
     document.getElementById("close-node-info").addEventListener("click", () => {
         nodeInfoContainer.style.display = "none";
         deselectNode(link,node);
     });
-    
-    // Aggiunge un listener per il click su ciascun elemento della lista dei link
+
+    // Aggiunge il listener per ciascun elemento della lista (per evidenziare il link al clic)
     document.querySelectorAll(".link-item").forEach(item => {
         item.addEventListener("click", function() {
             // Rimuove la classe "active" da tutti gli elementi della lista
@@ -432,7 +452,7 @@ function selectNode(id, link, node) {
             });
             // Aggiunge la classe "active" per indicare la selezione
             this.classList.add("active");
-            
+
             // Evidenzia il link corrispondente nel grafo
             d3.selectAll(".link").classed("selected", false);
             const src = this.getAttribute("data-source");
@@ -444,7 +464,18 @@ function selectNode(id, link, node) {
             }).classed("selected", true);
         });
     });
+
+    // *** NOVITÀ: listener per il pulsante "Seleziona Target" ***
+    document.querySelectorAll(".follow-link-btn").forEach(button => {
+        button.addEventListener("click", (event) => {
+            event.stopPropagation(); // Evita che il click sul pulsante venga gestito come click sul .link-item
+            const targetId = button.getAttribute("data-target");
+            // Esegui la selezione del nodo di destinazione
+            selectNode(targetId, link, node);
+        });
+    });
 }
+
 
 /**
  * Deseleziona il nodo e nasconde la card dei dettagli.
@@ -620,4 +651,37 @@ document.getElementById("search-icon").addEventListener("click", function() {
     // Alterna la classe "active" sul container
     container.classList.toggle("active");
   });
-  
+
+  document.getElementById("toggleFixNodes").addEventListener("change", function() {
+    fixNodesOnDrag = this.checked;
+});
+
+// =======================
+// RESET LAYOUT
+// =======================
+document.getElementById("resetLayoutBtn").addEventListener("click", function() {
+    let modal = new bootstrap.Modal(document.getElementById('confirmResetModal'));
+    modal.show();
+});
+
+// Se l'utente preme "Reset" nel modal, esegue il reset
+document.getElementById("confirmResetBtn").addEventListener("click", function() {
+    // Nascondi il modal
+    let modalEl = document.getElementById('confirmResetModal');
+    let modal = bootstrap.Modal.getInstance(modalEl);
+    modal.hide();
+
+    // Esegui le stesse operazioni di reset
+    filteredNodes.forEach(node => {
+        node.fx = null;
+        node.fy = null;
+    });
+    document.getElementById("linkDistanceSlider").value = DEFAULT_LINK_DISTANCE;
+    document.getElementById("chargeStrengthSlider").value = DEFAULT_CHARGE_STRENGTH;
+    simulation
+        .force("link", d3.forceLink(filteredLinks).id(d => d.id)
+            .distance(DEFAULT_LINK_DISTANCE))
+        .force("charge", d3.forceManyBody().strength(DEFAULT_CHARGE_STRENGTH))
+        .alpha(1)
+        .restart();
+});
