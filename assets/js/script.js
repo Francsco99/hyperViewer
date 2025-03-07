@@ -65,7 +65,7 @@ function resetSwitch(switchId, defaultValue) {
 }
 
 /**
- * Binding degli slider per aggiornare le forze della simulazione.
+ * Binding degli slider per aggiornare le forze della simulazione e mostrare il valore corrente.
  */
 function bindSlider(sliderId, forceName, attr, defaultVal) {
 	bindEvent(sliderId, "input", function() {
@@ -73,6 +73,12 @@ function bindSlider(sliderId, forceName, attr, defaultVal) {
 		if (simulation && simulation.force(forceName)) {
 			simulation.force(forceName)[attr](newVal);
 			simulation.alpha(1).restart();
+		}
+		// Aggiorna il valore visualizzato accanto allo slider
+		if (sliderId === "linkDistanceSlider") {
+			document.getElementById("linkDistanceValue").textContent = this.value;
+		} else if (sliderId === "chargeStrengthSlider") {
+			document.getElementById("chargeStrengthValue").textContent = this.value;
 		}
 	});
 }
@@ -427,16 +433,15 @@ function selectNode(id, linkSelection, nodeSelection) {
                                    style="font-size: 1.3rem; cursor: pointer; color: ${targetColor};"></i>
                             </li>
                             `;
-}).join('')
-} <
-/ul> <
-/div>
-` 
-                  : ` < p class = "mt-3" > No outgoing links < /p>`
-} <
-/div> <
-/div>
-`;
+}).join('')}
+                    </ul>
+                </div>
+                ` 
+                  : `<p class="mt-3">No outgoing links</p>`
+                }
+            </div>
+        </div>
+    `;
 
     nodeInfoContainer.innerHTML = contentHTML;
 
@@ -481,183 +486,184 @@ function selectNode(id, linkSelection, nodeSelection) {
 }
 
 function deselectNode(linkSelection, nodeSelection) {
-state.selectedNode = null;
-nodeSelection.classed("selected", false);
-linkSelection.classed("highlighted selected", false);
-document.getElementById("node-info").style.display = "none";
+	state.selectedNode = null;
+	nodeSelection.classed("selected", false);
+	linkSelection.classed("highlighted selected", false);
+	document.getElementById("node-info").style.display = "none";
 }
 
 // ============================================
 // 6. FUNZIONI DI SETUP DELL'INTERFACCIA UTENTE
 // ============================================
 function initUI() {
-// Caricamento file ZIP
-bindEvent("fileInput", "change", function(event) {
-    resetFormSwitches();
-    const file = event.target.files[0];
-    if (file) {
-    document.getElementById("resetLayoutBtn").disabled = false;
-    const reader = new FileReader();
-    reader.onload = e => {
-        JSZip.loadAsync(e.target.result).then(zip => processZip(zip));
-    };
-    reader.readAsArrayBuffer(file);
-    }
-});
+	// Caricamento file ZIP
+	bindEvent("fileInput", "change", function(event) {
+		resetFormSwitches();
+		const file = event.target.files[0];
+		if (file) {
+			document.getElementById("resetLayoutBtn").disabled = false;
+			document.getElementById("optionsDropdown").disabled = false;
+			const reader = new FileReader();
+			reader.onload = e => {
+				JSZip.loadAsync(e.target.result).then(zip => processZip(zip));
+			};
+			reader.readAsArrayBuffer(file);
+		}
+	});
 
-// Ricerca dei nodi
-bindEvent("searchInput", "input", function(event) {
-    const searchText = event.target.value.toLowerCase();
-    if (searchText === "") {
-    dataState.filteredNodes = dataState.nodesData;
-    dataState.filteredLinks = dataState.linksData;
-    } else {
-    const searchedNode = dataState.nodesData.find(node => node.label.toLowerCase().includes(searchText));
-    if (searchedNode) {
-        const visibleNodes = new Set();
-        visibleNodes.add(searchedNode.id);
-        dataState.linksData.forEach(link => {
-        if (link.source.id === searchedNode.id) visibleNodes.add(link.target.id);
-        if (link.target.id === searchedNode.id) visibleNodes.add(link.source.id);
-        });
-        dataState.filteredNodes = dataState.nodesData.filter(node => visibleNodes.has(node.id));
-        dataState.filteredLinks = dataState.linksData.filter(link => visibleNodes.has(link.source.id) && visibleNodes.has(link.target.id));
-    } else {
-        dataState.filteredNodes = [];
-        dataState.filteredLinks = [];
-    }
-    }
-    visualizeGraph(dataState.filteredNodes, dataState.filteredLinks);
-});
+	// Ricerca dei nodi
+	bindEvent("searchInput", "input", function(event) {
+		const searchText = event.target.value.toLowerCase();
+		if (searchText === "") {
+			dataState.filteredNodes = dataState.nodesData;
+			dataState.filteredLinks = dataState.linksData;
+		} else {
+			const searchedNode = dataState.nodesData.find(node => node.label.toLowerCase().includes(searchText));
+			if (searchedNode) {
+				const visibleNodes = new Set();
+				visibleNodes.add(searchedNode.id);
+				dataState.linksData.forEach(link => {
+					if (link.source.id === searchedNode.id) visibleNodes.add(link.target.id);
+					if (link.target.id === searchedNode.id) visibleNodes.add(link.source.id);
+				});
+				dataState.filteredNodes = dataState.nodesData.filter(node => visibleNodes.has(node.id));
+				dataState.filteredLinks = dataState.linksData.filter(link => visibleNodes.has(link.source.id) && visibleNodes.has(link.target.id));
+			} else {
+				dataState.filteredNodes = [];
+				dataState.filteredLinks = [];
+			}
+		}
+		visualizeGraph(dataState.filteredNodes, dataState.filteredLinks);
+	});
 
-// Gestione form-switch in modo unificato
-["toggleNodeLabels", "toggleLinkLabels", "toggleGrouping", "toggleFixNodes"].forEach(switchId => {
-    bindEvent(switchId, "change", function() {
-    const checked = this.checked;
-    switch (switchId) {
-        case "toggleNodeLabels":
-        state.showNodeLabels = checked;
-        d3.selectAll(".node-label").style("display", checked ? "block" : "none");
-        break;
-        case "toggleLinkLabels":
-        state.showLinkLabels = checked;
-        d3.selectAll(".link-label").style("display", checked ? "block" : "none");
-        break;
-        case "toggleGrouping":
-        state.groupingEnabled = checked;
-        if (checked) {
-            const grouped = groupGraphData(dataState.originalNodesData, dataState.originalLinksData);
-            dataState.nodesData = grouped.nodes;
-            dataState.linksData = grouped.links;
-        } else {
-            dataState.nodesData = dataState.originalNodesData;
-            dataState.linksData = dataState.originalLinksData;
-        }
-        dataState.filteredNodes = dataState.nodesData;
-        dataState.filteredLinks = dataState.linksData;
-        visualizeGraph(dataState.filteredNodes, dataState.filteredLinks);
-        break;
-        case "toggleFixNodes":
-        state.fixNodesOnDrag = checked;
-        break;
-    }
-    updateActiveCounter();
-    });
-});
+	// Gestione form-switch in modo unificato
+	["toggleNodeLabels", "toggleLinkLabels", "toggleGrouping", "toggleFixNodes"].forEach(switchId => {
+		bindEvent(switchId, "change", function() {
+			const checked = this.checked;
+			switch (switchId) {
+				case "toggleNodeLabels":
+					state.showNodeLabels = checked;
+					d3.selectAll(".node-label").style("display", checked ? "block" : "none");
+					break;
+				case "toggleLinkLabels":
+					state.showLinkLabels = checked;
+					d3.selectAll(".link-label").style("display", checked ? "block" : "none");
+					break;
+				case "toggleGrouping":
+					state.groupingEnabled = checked;
+					if (checked) {
+						const grouped = groupGraphData(dataState.originalNodesData, dataState.originalLinksData);
+						dataState.nodesData = grouped.nodes;
+						dataState.linksData = grouped.links;
+					} else {
+						dataState.nodesData = dataState.originalNodesData;
+						dataState.linksData = dataState.originalLinksData;
+					}
+					dataState.filteredNodes = dataState.nodesData;
+					dataState.filteredLinks = dataState.linksData;
+					visualizeGraph(dataState.filteredNodes, dataState.filteredLinks);
+					break;
+				case "toggleFixNodes":
+					state.fixNodesOnDrag = checked;
+					break;
+			}
+			updateActiveCounter();
+		});
+	});
 
-// Gestione della barra di ricerca (espandi/contrae)
-bindEvent("search-icon", "click", function() {
-    const searchInput = document.getElementById("searchInput");
-    const isExpanded = searchInput.style.width === "200px";
-    if (isExpanded) {
-    searchInput.style.width = "0";
-    searchInput.style.opacity = "0";
-    } else {
-    searchInput.style.width = "200px";
-    searchInput.style.opacity = "1";
-    searchInput.focus();
-    }
-    document.getElementById("search-container").classList.toggle("active");
-});
+	// Gestione della barra di ricerca (espandi/contrae)
+	bindEvent("search-icon", "click", function() {
+		const searchInput = document.getElementById("searchInput");
+		const isExpanded = searchInput.style.width === "200px";
+		if (isExpanded) {
+			searchInput.style.width = "0";
+			searchInput.style.opacity = "0";
+		} else {
+			searchInput.style.width = "200px";
+			searchInput.style.opacity = "1";
+			searchInput.focus();
+		}
+		document.getElementById("search-container").classList.toggle("active");
+	});
 
-// Binding degli slider per la simulazione
-bindSlider("linkDistanceSlider", "link", "distance", DEFAULT_LINK_DISTANCE);
-bindSlider("chargeStrengthSlider", "charge", "strength", DEFAULT_CHARGE_STRENGTH);
+	// Binding degli slider per la simulazione
+	bindSlider("linkDistanceSlider", "link", "distance", DEFAULT_LINK_DISTANCE);
+	bindSlider("chargeStrengthSlider", "charge", "strength", DEFAULT_CHARGE_STRENGTH);
 }
 
 /**
  * Resetta tutti gli switch ai valori di default.
  */
 function resetFormSwitches() {
-state.showNodeLabels = true;
-state.showLinkLabels = false;
-state.groupingEnabled = false;
-state.fixNodesOnDrag = false;
-resetSwitch("toggleNodeLabels", true);
-resetSwitch("toggleLinkLabels", false);
-resetSwitch("toggleGrouping", false);
-resetSwitch("toggleFixNodes", false);
-updateActiveCounter();
+	state.showNodeLabels = true;
+	state.showLinkLabels = false;
+	state.groupingEnabled = false;
+	state.fixNodesOnDrag = false;
+	resetSwitch("toggleNodeLabels", true);
+	resetSwitch("toggleLinkLabels", false);
+	resetSwitch("toggleGrouping", false);
+	resetSwitch("toggleFixNodes", false);
+	updateActiveCounter();
 }
 
 /**
  * Reset dell'interfaccia e della simulazione.
  */
 function resetUI() {
-// Reset campo di ricerca
-const searchInput = document.getElementById("searchInput");
-searchInput.value = "";
-searchInput.style.width = "0";
-searchInput.style.opacity = "0";
+	// Reset campo di ricerca
+	const searchInput = document.getElementById("searchInput");
+	searchInput.value = "";
+	searchInput.style.width = "0";
+	searchInput.style.opacity = "0";
 
-// Nasconde pannello dei dettagli
-document.getElementById("node-info").style.display = "none";
+	// Nasconde pannello dei dettagli
+	document.getElementById("node-info").style.display = "none";
 
-// Reset opzioni e slider
-resetFormSwitches();
-document.getElementById("linkDistanceSlider").value = DEFAULT_LINK_DISTANCE;
-document.getElementById("chargeStrengthSlider").value = DEFAULT_CHARGE_STRENGTH;
+	// Reset opzioni e slider
+	resetFormSwitches();
+	document.getElementById("linkDistanceSlider").value = DEFAULT_LINK_DISTANCE;
+	document.getElementById("chargeStrengthSlider").value = DEFAULT_CHARGE_STRENGTH;
 
-// Ripristina dati originali e aggiorna grafo
-dataState.nodesData = dataState.originalNodesData;
-dataState.linksData = dataState.originalLinksData;
-dataState.filteredNodes = dataState.nodesData;
-dataState.filteredLinks = dataState.linksData;
-visualizeGraph(dataState.filteredNodes, dataState.filteredLinks);
+	// Ripristina dati originali e aggiorna grafo
+	dataState.nodesData = dataState.originalNodesData;
+	dataState.linksData = dataState.originalLinksData;
+	dataState.filteredNodes = dataState.nodesData;
+	dataState.filteredLinks = dataState.linksData;
+	visualizeGraph(dataState.filteredNodes, dataState.filteredLinks);
 
-// Reset delle forze e dello zoom
-dataState.filteredNodes.forEach(node => {
-    node.fx = null;
-    node.fy = null;
-});
-simulation
-    .force("link", d3.forceLink(dataState.filteredLinks).id(d => d.id).distance(DEFAULT_LINK_DISTANCE))
-    .force("charge", d3.forceManyBody().strength(DEFAULT_CHARGE_STRENGTH))
-    .alpha(1)
-    .restart();
+	// Reset delle forze e dello zoom
+	dataState.filteredNodes.forEach(node => {
+		node.fx = null;
+		node.fy = null;
+	});
+	simulation
+		.force("link", d3.forceLink(dataState.filteredLinks).id(d => d.id).distance(DEFAULT_LINK_DISTANCE))
+		.force("charge", d3.forceManyBody().strength(DEFAULT_CHARGE_STRENGTH))
+		.alpha(1)
+		.restart();
 
-d3.select("svg").transition().duration(750).call(
-    d3.zoom().transform, d3.zoomIdentity
-);
+	d3.select("svg").transition().duration(750).call(
+		d3.zoom().transform, d3.zoomIdentity
+	);
 }
 
 // ============================================
 // 7. RESET DEL LAYOUT CON MODAL DI CONFERMA
 // ============================================
 document.addEventListener("DOMContentLoaded", () => {
-initUI();
-updateActiveCounter();
+	initUI();
+	updateActiveCounter();
 
-bindEvent("resetLayoutBtn", "click", () => {
-    const modalElement = document.getElementById("confirmResetModal");
-    const modalInstance = new bootstrap.Modal(modalElement);
-    modalInstance.show();
-});
+	bindEvent("resetLayoutBtn", "click", () => {
+		const modalElement = document.getElementById("confirmResetModal");
+		const modalInstance = new bootstrap.Modal(modalElement);
+		modalInstance.show();
+	});
 
-bindEvent("confirmResetBtn", "click", () => {
-    const modalElement = document.getElementById("confirmResetModal");
-    const modalInstance = bootstrap.Modal.getInstance(modalElement);
-    modalInstance.hide();
-    resetUI();
-});
+	bindEvent("confirmResetBtn", "click", () => {
+		const modalElement = document.getElementById("confirmResetModal");
+		const modalInstance = bootstrap.Modal.getInstance(modalElement);
+		modalInstance.hide();
+		resetUI();
+	});
 });

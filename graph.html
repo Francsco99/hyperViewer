@@ -38,7 +38,7 @@
                -->
             <!-- Dropdown menu opzioni con badge counter -->
             <div class="dropdown mx-3">
-               <button class="btn btn-secondary dropdown-toggle position-relative" type="button" id="optionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+               <button class="btn btn-secondary dropdown-toggle position-relative" type="button" id="optionsDropdown" data-bs-toggle="dropdown" aria-expanded="false" disabled>
                Options
                <span id="activeCounterBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                0
@@ -75,13 +75,17 @@
                      </div>
                   </li>
                   <li class="mt-2">
-                     <label for="linkDistanceSlider" class="form-label mb-0">Link Distance</label>
-                     <input type="range" class="form-range" id="linkDistanceSlider" min="0" max="600">
-                  </li>
-                  <li class="mt-3">
-                     <label for="chargeStrengthSlider" class="form-label mb-0">Charge Strength</label>
-                     <input type="range" class="form-range" id="chargeStrengthSlider" min="-1200" max="0">
-                  </li>
+                     <label for="linkDistanceSlider" class="form-label mb-0">
+                       Link Distance <span id="linkDistanceValue">300</span>
+                     </label>
+                     <input type="range" class="form-range" id="linkDistanceSlider" min="0" max="600" value="300">
+                   </li>
+                   <li class="mt-3">
+                     <label for="chargeStrengthSlider" class="form-label mb-0">
+                       Charge Strength <span id="chargeStrengthValue">-600</span>
+                     </label>
+                     <input type="range" class="form-range" id="chargeStrengthSlider" min="-1200" max="0" value="-600">
+                   </li>                   
                </ul>
             </div>
             <button id="resetLayoutBtn" class="btn btn-danger" disabled>Reset Layout</button>                      
