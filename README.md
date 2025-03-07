@@ -1,6 +1,6 @@
 # HyperViewer
 
-![HyperViewer Logo](assets\images\binoculars_logo.png)
+![HyperViewer Logo](assets/images/binoculars_logo.png)
 
 **HyperViewer** is a web application that provides an interactive visualization of hyperlinks using **D3.js force simulation**. It allows users to explore hyperlink structures dynamically, making it easier to understand the relationships between different web pages.
 
