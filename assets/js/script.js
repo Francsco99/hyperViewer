@@ -1,12 +1,11 @@
 // ============================================
-// GLOBAL VARIABLES
+// 1. VARIABILI GLOBALI E COSTANTI
 // ============================================
 let selectedNode = null;
 let showNodeLabels = true;       // Visualizza le etichette dei nodi
 let showLinkLabels = false;      // Visualizza le etichette dei link
 let groupingEnabled = false;     // Raggruppamento disattivato di default
 let fixNodesOnDrag = false;
-
 
 let nodesData = [];              // Dati dei nodi visualizzati (eventualmente raggruppati)
 let linksData = [];              // Dati dei link visualizzati (eventualmente raggruppati)
@@ -22,7 +21,7 @@ document.getElementById("linkDistanceSlider").value = DEFAULT_LINK_DISTANCE;
 document.getElementById("chargeStrengthSlider").value = DEFAULT_CHARGE_STRENGTH;
 
 // ============================================
-// UTILITY FUNCTIONS
+// 2. FUNZIONI UTILITY
 // ============================================
 /**
  * Risolve un percorso relativo in base al percorso base.
@@ -35,8 +34,7 @@ function resolvePath(base, href) {
 }
 
 /**
- * (Opzionale) Funzione toggle generica per vecchie icone.
- * Non usata con i form-switch di Bootstrap.
+ * Funzione toggle per vecchie icone (opzionale, non usata con i form-switch di Bootstrap).
  */
 function toggleButton(buttonId, stateVariable, updateFunction) {
     let button = document.getElementById(buttonId);
@@ -57,7 +55,7 @@ function toggleButton(buttonId, stateVariable, updateFunction) {
 }
 
 // ============================================
-// GROUPING FUNCTIONS
+// 3. FUNZIONI DI RAGGRUPPAMENTO
 // ============================================
 /**
  * Raggruppa i nodi e i link basandosi sul "basepath".
@@ -117,7 +115,7 @@ function groupGraphData(nodes, links) {
 }
 
 // ============================================
-// DATA PROCESSING FUNCTIONS
+// 4. FUNZIONI DI ELABORAZIONE DEI DATI
 // ============================================
 /**
  * Processa il file ZIP contenente le pagine HTML e crea i dati per il grafo.
@@ -190,7 +188,7 @@ async function processZip(zip) {
 }
 
 // ============================================
-// GRAPH VISUALIZATION FUNCTIONS
+// 5. FUNZIONI DI VISUALIZZAZIONE DEL GRAFO
 // ============================================
 /**
  * Visualizza il grafo usando D3.
@@ -218,7 +216,7 @@ function visualizeGraph(nodes, links) {
     let linkGroup = container.append("g").attr("class", "links");
     let nodeGroup = container.append("g").attr("class", "nodes");
 
-    // Crea la simulazione con le forze (inclusa la forza centrale fittizia)
+    // Crea la simulazione con le forze
     simulation = d3.forceSimulation(nodes)
         .force("link", d3.forceLink(links).id(d => d.id).distance(DEFAULT_LINK_DISTANCE))
         .force("charge", d3.forceManyBody().strength(DEFAULT_CHARGE_STRENGTH))
@@ -244,7 +242,7 @@ function visualizeGraph(nodes, links) {
         .style("display", showLinkLabels ? "block" : "none");
 
     // Crea i nodi (cerchi) con classi diverse in base al tipo
-    let node = nodeGroup.selectAll("circle")
+    let nodeSelection = nodeGroup.selectAll("circle")
         .data(nodes)
         .enter().append("circle")
         .attr("class", d => {
@@ -254,7 +252,7 @@ function visualizeGraph(nodes, links) {
         .attr("r", 10)
         .on("click", (event, d) => {
             event.stopPropagation();
-            selectNode(d.id, link, node);
+            selectNode(d.id, link, nodeSelection);
         })
         .on("mouseover", function(event, d) {
             d3.select("#tooltip")
@@ -310,7 +308,7 @@ function visualizeGraph(nodes, links) {
     });
     
     // Deseleziona nodo cliccando sullo sfondo
-    svg.on("click", () => deselectNode(link, node));
+    svg.on("click", () => deselectNode(link, nodeSelection));
 
     // Aggiorna la simulazione ad ogni tick
     simulation.on("tick", () => {
@@ -320,10 +318,10 @@ function visualizeGraph(nodes, links) {
             .attr("y2", d => d.target.y);
 
         linkText.attr("x", d => (d.source.x + d.target.x) / 2)
-            .attr("y", d => (d.source.y + d.target.y) / 2);
+                .attr("y", d => (d.source.y + d.target.y) / 2);
 
-        node.attr("cx", d => d.x)
-            .attr("cy", d => d.y);
+        nodeSelection.attr("cx", d => d.x)
+                     .attr("cy", d => d.y);
 
         nodeText.attr("x", d => d.x)
                 .attr("y", d => d.y);
@@ -331,41 +329,32 @@ function visualizeGraph(nodes, links) {
 }
 
 // ============================================
-// DRAG EVENT HANDLERS
+// 6. GESTIONE DEGLI EVENTI DI DRAG & DROP
 // ============================================
 function dragStarted(event, d) {
-    // Se la simulazione è attiva, aumenta l'alpha per animare il drag
     if (!event.active) simulation.alphaTarget(0.3).restart();
-    // Fissa il nodo alla sua posizione attuale
     d.fx = d.x;
     d.fy = d.y;
 }
 
 function dragged(event, d) {
-    // Aggiorna la posizione fissata del nodo
     d.fx = event.x;
     d.fy = event.y;
 }
 
 function dragEnded(event, d) {
-    // Abbassa l'alphaTarget dopo il drag
     if (!event.active) simulation.alphaTarget(0);
-
-    // Se fixNodesOnDrag è false, liberiamo il nodo
-    // Altrimenti resta fisso (d.fx, d.fy non vengono toccati)
     if (!fixNodesOnDrag) {
         d.fx = null;
         d.fy = null;
     }
 }
 
-
 // ============================================
-// NODE SELECTION AND DETAILS CARD
+// 7. SELEZIONE NODO E CARD DI DETTAGLI
 // ============================================
 /**
- * Gestisce la selezione di un nodo, evidenziandolo, mostrando le sue etichette e 
- * costruendo una card con i dettagli e i link in uscita.
+ * Gestisce la selezione di un nodo, evidenziandolo e mostrando i dettagli in una card.
  */
 function selectNode(id, link, node) {
     selectedNode = id;
@@ -373,7 +362,7 @@ function selectNode(id, link, node) {
     node.classed("selected", d => d.id === id);
     link.classed("highlighted", d => d.source.id === id);
 
-    // Rimuove il grassetto da tutte le etichette e lo applica al nodo selezionato
+    // Aggiorna lo stile delle etichette dei nodi
     d3.selectAll(".node-label").classed("bold-label", false);
     d3.selectAll(".node-label")
       .filter(d => d.id === id)
@@ -413,7 +402,6 @@ function selectNode(id, link, node) {
             let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
             let tgt = (typeof linkObj.target === "object") ? linkObj.target.id : linkObj.target;
 
-            // Aggiungiamo un pulsante "Seleziona Target"
             contentHTML += `
               <li class="list-group-item link-item d-flex justify-content-between align-items-center" data-source="${src}" data-target="${tgt}" style="cursor: pointer;">
                 <div>
@@ -437,23 +425,17 @@ function selectNode(id, link, node) {
 
     nodeInfoContainer.innerHTML = contentHTML;
 
-    // Aggiunge un listener per chiudere la card
+    // Listener per chiudere la card dei dettagli
     document.getElementById("close-node-info").addEventListener("click", () => {
         nodeInfoContainer.style.display = "none";
-        deselectNode(link,node);
+        deselectNode(link, node);
     });
 
-    // Aggiunge il listener per ciascun elemento della lista (per evidenziare il link al clic)
+    // Listener per la selezione dei link all'interno della card
     document.querySelectorAll(".link-item").forEach(item => {
         item.addEventListener("click", function() {
-            // Rimuove la classe "active" da tutti gli elementi della lista
-            document.querySelectorAll(".link-item").forEach(li => {
-                li.classList.remove("active");
-            });
-            // Aggiunge la classe "active" per indicare la selezione
+            document.querySelectorAll(".link-item").forEach(li => li.classList.remove("active"));
             this.classList.add("active");
-
-            // Evidenzia il link corrispondente nel grafo
             d3.selectAll(".link").classed("selected", false);
             const src = this.getAttribute("data-source");
             const tgt = this.getAttribute("data-target");
@@ -465,17 +447,15 @@ function selectNode(id, link, node) {
         });
     });
 
-    // *** NOVITÀ: listener per il pulsante "Seleziona Target" ***
+    // Listener per il pulsante "Seleziona Target"
     document.querySelectorAll(".follow-link-btn").forEach(button => {
         button.addEventListener("click", (event) => {
-            event.stopPropagation(); // Evita che il click sul pulsante venga gestito come click sul .link-item
+            event.stopPropagation();
             const targetId = button.getAttribute("data-target");
-            // Esegui la selezione del nodo di destinazione
             selectNode(targetId, link, node);
         });
     });
 }
-
 
 /**
  * Deseleziona il nodo e nasconde la card dei dettagli.
@@ -486,16 +466,15 @@ function deselectNode(link, node) {
     link.classed("highlighted", false);
     link.classed("selected", false);
     document.getElementById("node-info").style.display = "none";
-    // Se esistono elementi per nome e link, li resetta (se presenti)
     if(document.getElementById("node-name")) document.getElementById("node-name").innerHTML = '';
     if(document.getElementById("node-links")) document.getElementById("node-links").innerHTML = '';
 }
 
 // ============================================
-// BADGE COUNTER FOR FORM-SWITCHES
+// 8. FUNZIONI DI SUPPORTO PER L'INTERFACCIA UTENTE
 // ============================================
 /**
- * Aggiorna il badge counter nel dropdown in base al numero di form-switch attivi.
+ * Aggiorna il badge counter in base al numero di form-switch attivi.
  */
 function updateActiveCounter() {
     let count = 0;
@@ -505,9 +484,6 @@ function updateActiveCounter() {
     document.getElementById("activeCounterBadge").innerText = count;
 }
 
-// ============================================
-// RESET FORM-SWITCHES FUNCTION
-// ============================================
 /**
  * Resetta i form-switch ai valori originali.
  */
@@ -522,14 +498,12 @@ function resetFormSwitches() {
 }
 
 // ============================================
-// EVENT LISTENERS FOR USER INTERACTION
+// 9. SETUP DEGLI EVENT LISTENERS
 // ============================================
 
 // Gestione del caricamento del file ZIP
 document.getElementById("fileInput").addEventListener("change", function(event) {
-    // Resetta i form-switch al caricamento di un nuovo file
     resetFormSwitches();
-    
     const file = event.target.files[0];
     if (file) {
         const reader = new FileReader();
@@ -594,9 +568,6 @@ document.getElementById("toggleGrouping").addEventListener("change", function() 
     updateActiveCounter();
 });
 
-// Imposta il counter iniziale
-updateActiveCounter();
-
 // Gestione della barra di ricerca (espandi/contrae)
 document.getElementById("search-icon").addEventListener("click", function() {
     const searchInput = document.getElementById("searchInput");
@@ -628,14 +599,9 @@ document.getElementById("chargeStrengthSlider").addEventListener("input", functi
     }
 });
 
-// ============================================
-// INITIALIZATION WHEN DOM IS LOADED
-// ============================================
+// Event listeners per il DOMContentLoaded
 document.addEventListener("DOMContentLoaded", function() {
-    // Resetta i form-switch all'avvio della pagina
     resetFormSwitches();
-    
-    // Aggiunge il listener all'icona info per mostrare il tutorial
     document.getElementById("infoIcon").addEventListener("click", showTutorial);
 });
 
@@ -644,34 +610,30 @@ document.addEventListener('DOMContentLoaded', function() {
     var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
       return new bootstrap.Tooltip(tooltipTriggerEl);
     });
-  });
+});
 
 document.getElementById("search-icon").addEventListener("click", function() {
     var container = document.getElementById("search-container");
-    // Alterna la classe "active" sul container
     container.classList.toggle("active");
-  });
+});
 
-  document.getElementById("toggleFixNodes").addEventListener("change", function() {
+document.getElementById("toggleFixNodes").addEventListener("change", function() {
     fixNodesOnDrag = this.checked;
 });
 
-// =======================
-// RESET LAYOUT
-// =======================
+// ============================================
+// 10. RESET DEL LAYOUT
+// ============================================
 document.getElementById("resetLayoutBtn").addEventListener("click", function() {
     let modal = new bootstrap.Modal(document.getElementById('confirmResetModal'));
     modal.show();
 });
 
-// Se l'utente preme "Reset" nel modal, esegue il reset
 document.getElementById("confirmResetBtn").addEventListener("click", function() {
-    // Nascondi il modal
     let modalEl = document.getElementById('confirmResetModal');
     let modal = bootstrap.Modal.getInstance(modalEl);
     modal.hide();
 
-    // Esegui le stesse operazioni di reset
     filteredNodes.forEach(node => {
         node.fx = null;
         node.fy = null;
