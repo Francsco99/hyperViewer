@@ -599,12 +599,6 @@ document.getElementById("chargeStrengthSlider").addEventListener("input", functi
     }
 });
 
-// Event listeners per il DOMContentLoaded
-document.addEventListener("DOMContentLoaded", function() {
-    resetFormSwitches();
-    document.getElementById("infoIcon").addEventListener("click", showTutorial);
-});
-
 document.addEventListener('DOMContentLoaded', function() {
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
