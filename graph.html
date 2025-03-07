@@ -122,29 +122,39 @@
        </div>
 
        <!-- Tutorial Modal -->
-      <div class="modal fade" id="tutorialModal" tabindex="-1" aria-labelledby="tutorialModalLabel" aria-hidden="true">
-         <div class="modal-dialog modal-dialog-centered">
-         <div class="modal-content">
-            <div class="modal-header">
+       <div class="modal fade" id="tutorialModal" tabindex="-1" aria-labelledby="tutorialModalLabel" aria-hidden="true">
+         <div class="modal-dialog modal-dialog-centered modal-lg">
+           <div class="modal-content">
+             <div class="modal-header">
                <h5 class="modal-title" id="tutorialModalLabel">👋 Welcome to <strong>HyperViewer</strong>!</h5>
-               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-               <p>This application helps you visualize and analyze interactive graphs.</p>
+             </div>
+             <div class="modal-body">
+               <p>This application allows you to visualize and analyze interactive graphs.</p>
+               <h6>Main Features:</h6>
                <ul>
-               <li>📂 <strong>Upload</strong> a ZIP file containing HTML pages.</li>
-               <li>🔎 <strong>Filter</strong> nodes by their name.</li>
-               <li>💡 <strong>Toggle labels</strong> for nodes and links.</li>
-               <li>🧩 <strong>Group nodes</strong> with the same name.</li>
-               <li>👆 <strong>Click on a node</strong> to see its details.</li>
+                 <li>📥 <strong>Upload</strong> a ZIP file containing HTML pages.</li>
+                 <li>🔍 <strong>Filter</strong> nodes by name using the search bar.</li>
+                 <li>💬 <strong>Toggle labels</strong> for nodes and links using the switches.</li>
+                 <li>🗂️ <strong>Group nodes</strong> with similar names by enabling the grouping option.</li>
+                 <li>👉 <strong>Select</strong> a node to view detailed information and outgoing links.</li>
+                 <li>🤚 <strong>Drag and drop</strong> nodes to adjust the layout.</li>
+                 <li>🔎 <strong>Zoom and pan</strong> across the graph for better exploration.</li>
+                 <li>🔄 <strong>Reset layout</strong> to restore the original view.</li>
                </ul>
-            </div>
-            <div class="modal-footer">
+               <h6>Node-Info Panel:</h6>
+               <ul>
+                 <li>📝 Displays detailed information about the selected node, including its ID and additional details.</li>
+                 <li>🔗 Lists the outgoing links from the selected node with their associated labels.</li>
+                 <li>➡️ Use the <strong>Follow Link</strong> button to quickly navigate to connected nodes.</li>
+                 <li>❌ Close the panel with the <strong>Close</strong> button to return to the graph view.</li>
+               </ul>
+             </div>
+             <div class="modal-footer">
                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="close-tutorial-btn">Got it! 🚀</button>
-            </div>
+             </div>
+           </div>
          </div>
-         </div>
-      </div>
+       </div>       
  
       <!-- Tooltip nodi e archi -->
       <div id="tooltip"></div>
