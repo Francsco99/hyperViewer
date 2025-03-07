@@ -382,46 +382,44 @@ function selectNode(id, link, node) {
         return sourceIds.includes(src);
     });
 
-    // Costruisce l'HTML della card dei dettagli
+    // Costruisce l'HTML della card dei dettagli con un layout migliorato
     let contentHTML = `
-      <div class="card">
+      <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h5 class="mb-0">Node Details</h5>
           <button id="close-node-info" type="button" class="btn-close" aria-label="Close"></button>
         </div>
         <div class="card-body">
-          <p class="card-text"><strong>ID:</strong> ${id}</p>`;
-
-    if (outgoingLinks.length > 0) {
-        contentHTML += `
-          <h6 class="mt-3">Outgoing links ➡️</h6>
-          <div style="max-height: 60vh; overflow-y: auto;">
-            <ul class="list-group list-group-flush">`;
-
-        outgoingLinks.forEach(linkObj => {
-            let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
-            let tgt = (typeof linkObj.target === "object") ? linkObj.target.id : linkObj.target;
-
-            contentHTML += `
-              <li class="list-group-item link-item d-flex justify-content-between align-items-center" data-source="${src}" data-target="${tgt}" style="cursor: pointer;">
-                <div>
-                  <strong>${tgt}</strong> <br> <em>${linkObj.label}</em>
-                </div>
-                <button class="btn btn-sm btn-primary follow-link-btn" data-target="${tgt}" style="margin-left: 8px;">
-                  Select Target
-                </button>
-              </li>`;
-        });
-
-        contentHTML += `</ul>
-          </div>`;
-    } else {
-        contentHTML += `<p class="mt-3">No outgoing links</p>`;
-    }
-
-    contentHTML += `
+          <p class="card-text"><strong>ID:</strong> ${id}</p>
+          ${
+            outgoingLinks.length > 0 
+            ? `
+          <h6 class="mt-3">Outgoing Links <i class="bi bi-arrow-right"></i></h6>
+          <div class="overflow-auto" style="max-height: 60vh;">
+            <ul class="list-group list-group-flush">
+              ${outgoingLinks.map(linkObj => {
+                  let src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
+                  let tgt = (typeof linkObj.target === "object") ? linkObj.target.id : linkObj.target;
+                  return `
+                  <li class="list-group-item d-flex justify-content-between align-items-center link-item" data-source="${src}" data-target="${tgt}" style="cursor: pointer;">
+                    <div>
+                      <strong>${tgt}</strong><br>
+                      <small class="text-muted">${linkObj.label}</small>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary follow-link-btn text-nowrap" data-target="${tgt}">
+                      Select Target
+                    </button>
+                  </li>
+                  `;
+              }).join('')}
+            </ul>
+          </div>
+          ` 
+            : `<p class="mt-3">No outgoing links</p>`
+          }
         </div>
-      </div>`;
+      </div>
+    `;
 
     nodeInfoContainer.innerHTML = contentHTML;
 
@@ -457,6 +455,7 @@ function selectNode(id, link, node) {
     });
 }
 
+
 /**
  * Deseleziona il nodo e nasconde la card dei dettagli.
  */
@@ -481,6 +480,7 @@ function updateActiveCounter() {
     if (document.getElementById("toggleNodeLabels").checked) count++;
     if (document.getElementById("toggleLinkLabels").checked) count++;
     if (document.getElementById("toggleGrouping").checked) count++;
+    if(document.getElementById("toggleFixNodes").checked) count ++;
     document.getElementById("activeCounterBadge").innerText = count;
 }
 
@@ -494,6 +494,7 @@ function resetFormSwitches() {
     document.getElementById("toggleNodeLabels").checked = true;
     document.getElementById("toggleLinkLabels").checked = false;
     document.getElementById("toggleGrouping").checked = false;
+    document.getElementById("toggleFixNodes").checked = false;
     updateActiveCounter();
 }
 
@@ -506,6 +507,7 @@ document.getElementById("fileInput").addEventListener("change", function(event) 
     resetFormSwitches();
     const file = event.target.files[0];
     if (file) {
+        document.getElementById("resetLayoutBtn").disabled = false;
         const reader = new FileReader();
         reader.onload = function(e) {
             JSZip.loadAsync(e.target.result).then(zip => processZip(zip));
@@ -604,6 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
       return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+    updateActiveCounter();
 });
 
 document.getElementById("search-icon").addEventListener("click", function() {
@@ -613,31 +616,70 @@ document.getElementById("search-icon").addEventListener("click", function() {
 
 document.getElementById("toggleFixNodes").addEventListener("change", function() {
     fixNodesOnDrag = this.checked;
+    updateActiveCounter();
 });
 
 // ============================================
 // 10. RESET DEL LAYOUT
 // ============================================
-document.getElementById("resetLayoutBtn").addEventListener("click", function() {
-    let modal = new bootstrap.Modal(document.getElementById('confirmResetModal'));
-    modal.show();
-});
-
-document.getElementById("confirmResetBtn").addEventListener("click", function() {
-    let modalEl = document.getElementById('confirmResetModal');
-    let modal = bootstrap.Modal.getInstance(modalEl);
-    modal.hide();
-
-    filteredNodes.forEach(node => {
+document.addEventListener("DOMContentLoaded", function() {
+    // Gestione click su "Reset Layout": mostra il modal di conferma
+    document.getElementById("resetLayoutBtn").addEventListener("click", function() {
+      let modalElement = document.getElementById('confirmResetModal');
+      let modalInstance = new bootstrap.Modal(modalElement);
+      modalInstance.show();
+    });
+  
+    // Gestione click sul pulsante "Reset" del modal
+    document.getElementById("confirmResetBtn").addEventListener("click", function() {
+      let modalElement = document.getElementById('confirmResetModal');
+      let modalInstance = bootstrap.Modal.getInstance(modalElement);
+      modalInstance.hide();
+  
+      // 1. Reset del campo di ricerca (valore e stato visivo)
+      const searchInput = document.getElementById("searchInput");
+      searchInput.value = "";
+      searchInput.style.width = "0";
+      searchInput.style.opacity = "0";
+  
+      // 2. Nasconde il pannello dei dettagli (node info)
+      document.getElementById("node-info").style.display = "none";
+  
+      // 3. Reset delle opzioni: etichette, grouping, form-switches
+      resetFormSwitches();
+      // Reset del toggle "Fix Nodes"
+      document.getElementById("toggleFixNodes").checked = false;
+      fixNodesOnDrag = false;
+  
+      // 4. Reset degli slider: link distance e charge strength
+      document.getElementById("linkDistanceSlider").value = DEFAULT_LINK_DISTANCE;
+      document.getElementById("chargeStrengthSlider").value = DEFAULT_CHARGE_STRENGTH;
+  
+      // 5. Reset del raggruppamento e ripristino dei dati originali:
+      //    - Group nodes disattivato (show originalNodesData e originalLinksData)
+      nodesData = originalNodesData;
+      linksData = originalLinksData;
+      filteredNodes = nodesData;
+      filteredLinks = linksData;
+      // Ricarica il grafo con le opzioni di default (node labels visibili, link labels nascoste, grouping off)
+      visualizeGraph(filteredNodes, filteredLinks);
+  
+      // 6. Reset della simulazione: rimuove forzature e riavvia la simulazione
+      filteredNodes.forEach(node => {
         node.fx = null;
         node.fy = null;
-    });
-    document.getElementById("linkDistanceSlider").value = DEFAULT_LINK_DISTANCE;
-    document.getElementById("chargeStrengthSlider").value = DEFAULT_CHARGE_STRENGTH;
-    simulation
+      });
+      simulation
         .force("link", d3.forceLink(filteredLinks).id(d => d.id)
             .distance(DEFAULT_LINK_DISTANCE))
         .force("charge", d3.forceManyBody().strength(DEFAULT_CHARGE_STRENGTH))
         .alpha(1)
         .restart();
-});
+  
+      // 7. Reset dello zoom e panning: riporta il container del grafo allo stato iniziale
+      d3.select("svg").transition().duration(750).call(
+        d3.zoom().transform, d3.zoomIdentity
+      );
+    });
+  });
+  
