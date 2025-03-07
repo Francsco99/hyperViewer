@@ -2,20 +2,20 @@
 // 1. GLOBAL STATE & COSTANTI
 // ============================================
 const state = {
-    selectedNode: null,
-    showNodeLabels: true,
-    showLinkLabels: false,
-    groupingEnabled: false,
-    fixNodesOnDrag: false
-  };
-  
+	selectedNode: null,
+	showNodeLabels: true,
+	showLinkLabels: false,
+	groupingEnabled: false,
+	fixNodesOnDrag: false
+};
+
 const dataState = {
-nodesData: [],
-linksData: [],
-filteredNodes: [],
-filteredLinks: [],
-originalNodesData: [],
-originalLinksData: []
+	nodesData: [],
+	linksData: [],
+	filteredNodes: [],
+	filteredLinks: [],
+	originalNodesData: [],
+	originalLinksData: []
 };
 
 const DEFAULT_LINK_DISTANCE = 300;
@@ -30,338 +30,362 @@ document.getElementById("chargeStrengthSlider").value = DEFAULT_CHARGE_STRENGTH;
  * Risolve un percorso relativo in base al percorso base.
  */
 function resolvePath(base, href) {
-let baseParts = base.split("/").slice(0, -1);
-let hrefParts = href.split("/");
-let path = baseParts.concat(hrefParts).join("/");
-return path.replace(/\/\.\//g, "/").replace(/\/[^/]+\/\.\.\//g, "/");
+	let baseParts = base.split("/").slice(0, -1);
+	let hrefParts = href.split("/");
+	let path = baseParts.concat(hrefParts).join("/");
+	return path.replace(/\/\.\//g, "/").replace(/\/[^/]+\/\.\.\//g, "/");
 }
 
 /**
  * Binding unificato degli eventi per un elemento.
  */
 function bindEvent(elementId, event, handler) {
-const el = document.getElementById(elementId);
-if (el) el.addEventListener(event, handler);
+	const el = document.getElementById(elementId);
+	if (el) el.addEventListener(event, handler);
 }
 
 /**
  * Aggiorna il badge che mostra il numero di switch attivi.
  */
 function updateActiveCounter() {
-let count = 0;
-if (document.getElementById("toggleNodeLabels").checked) count++;
-if (document.getElementById("toggleLinkLabels").checked) count++;
-if (document.getElementById("toggleGrouping").checked) count++;
-if (document.getElementById("toggleFixNodes").checked) count++;
-document.getElementById("activeCounterBadge").innerText = count;
+	let count = 0;
+	if (document.getElementById("toggleNodeLabels").checked) count++;
+	if (document.getElementById("toggleLinkLabels").checked) count++;
+	if (document.getElementById("toggleGrouping").checked) count++;
+	if (document.getElementById("toggleFixNodes").checked) count++;
+	document.getElementById("activeCounterBadge").innerText = count;
 }
 
 /**
  * Resetta un singolo switch al valore di default.
  */
 function resetSwitch(switchId, defaultValue) {
-const el = document.getElementById(switchId);
-if (el) el.checked = defaultValue;
+	const el = document.getElementById(switchId);
+	if (el) el.checked = defaultValue;
 }
 
 /**
  * Binding degli slider per aggiornare le forze della simulazione.
  */
 function bindSlider(sliderId, forceName, attr, defaultVal) {
-bindEvent(sliderId, "input", function() {
-    const newVal = +this.value;
-    if (simulation && simulation.force(forceName)) {
-    simulation.force(forceName)[attr](newVal);
-    simulation.alpha(1).restart();
-    }
-});
+	bindEvent(sliderId, "input", function() {
+		const newVal = +this.value;
+		if (simulation && simulation.force(forceName)) {
+			simulation.force(forceName)[attr](newVal);
+			simulation.alpha(1).restart();
+		}
+	});
 }
 
 // ============================================
 // 3. ELABORAZIONE DEI DATI & FUNZIONI DI RAGGRUPPAMENTO
 // ============================================
 function groupGraphData(nodes, links) {
-const groupMapping = {};
-const groupedNodesObj = {};
+	const groupMapping = {};
+	const groupedNodesObj = {};
 
-nodes.forEach(node => {
-    let groupId;
-    if (node.id.charAt(0) === "#" && node.baseFile) {
-    groupId = node.baseFile;
-    } else {
-    groupId = node.id.split("#")[0];
-    }
-    groupMapping[node.id] = groupId;
+	nodes.forEach(node => {
+		let groupId;
+		if (node.id.charAt(0) === "#" && node.baseFile) {
+			groupId = node.baseFile;
+		} else {
+			groupId = node.id.split("#")[0];
+		}
+		groupMapping[node.id] = groupId;
 
-    if (!groupedNodesObj[groupId]) {
-    groupedNodesObj[groupId] = { 
-        id: groupId, 
-        label: groupId,
-        originalNodes: [node]
-    };
-    } else {
-    groupedNodesObj[groupId].originalNodes.push(node);
-    }
-});
+		if (!groupedNodesObj[groupId]) {
+			groupedNodesObj[groupId] = {
+				id: groupId,
+				label: groupId,
+				originalNodes: [node]
+			};
+		} else {
+			groupedNodesObj[groupId].originalNodes.push(node);
+		}
+	});
 
-const groupedNodes = Object.values(groupedNodesObj);
-const groupedLinksObj = {};
+	const groupedNodes = Object.values(groupedNodesObj);
+	const groupedLinksObj = {};
 
-links.forEach(link => {
-    const src = (typeof link.source === "object") ? link.source.id : link.source;
-    const tgt = (typeof link.target === "object") ? link.target.id : link.target;
-    const groupSrc = groupMapping[src];
-    const groupTgt = groupMapping[tgt];
-    if (groupSrc !== groupTgt) {
-    const key = groupSrc + "->" + groupTgt;
-    if (!groupedLinksObj[key]) {
-        groupedLinksObj[key] = { 
-        source: groupSrc, 
-        target: groupTgt, 
-        label: "", 
-        originalLinks: [link]
-        };
-    } else {
-        groupedLinksObj[key].originalLinks.push(link);
-    }
-    }
-});
+	links.forEach(link => {
+		const src = (typeof link.source === "object") ? link.source.id : link.source;
+		const tgt = (typeof link.target === "object") ? link.target.id : link.target;
+		const groupSrc = groupMapping[src];
+		const groupTgt = groupMapping[tgt];
+		if (groupSrc !== groupTgt) {
+			const key = groupSrc + "->" + groupTgt;
+			if (!groupedLinksObj[key]) {
+				groupedLinksObj[key] = {
+					source: groupSrc,
+					target: groupTgt,
+					label: "",
+					originalLinks: [link]
+				};
+			} else {
+				groupedLinksObj[key].originalLinks.push(link);
+			}
+		}
+	});
 
-const groupedLinks = Object.values(groupedLinksObj);
-return { nodes: groupedNodes, links: groupedLinks };
+	const groupedLinks = Object.values(groupedLinksObj);
+	return {
+		nodes: groupedNodes,
+		links: groupedLinks
+	};
 }
 
 /**
  * Processa il file ZIP contenente le pagine HTML e crea i dati per il grafo.
  */
 async function processZip(zip) {
-const nodes = {};
-const links = [];
+	const nodes = {};
+	const links = [];
 
-for (const fileName of Object.keys(zip.files)) {
-    if (fileName.endsWith(".html")) {
-    const content = await zip.files[fileName].async("text");
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(content, "text/html");
+	for (const fileName of Object.keys(zip.files)) {
+		if (fileName.endsWith(".html")) {
+			const content = await zip.files[fileName].async("text");
+			const parser = new DOMParser();
+			const doc = parser.parseFromString(content, "text/html");
 
-    // Crea il nodo per il file HTML
-    nodes[fileName] = { id: fileName, label: fileName };
+			// Crea il nodo per il file HTML
+			nodes[fileName] = {
+				id: fileName,
+				label: fileName
+			};
 
-    // Processa gli href della pagina
-    doc.querySelectorAll("a[href]").forEach(link => {
-        const href = link.getAttribute("href");
-        const text = link.textContent.trim() || "link";
+			// Processa gli href della pagina
+			doc.querySelectorAll("a[href]").forEach(link => {
+				const href = link.getAttribute("href");
+				const text = link.textContent.trim() || "link";
 
-        if (href.startsWith("http")) {
-        nodes["web"] = { id: "web", label: "Web" };
-        links.push({ source: fileName, target: "web", label: text });
-        } else if (href.charAt(0) === "#") {
-        if (!nodes[href]) {
-            nodes[href] = { 
-            id: href, 
-            label: href, 
-            isAnchor: true,
-            baseFile: fileName
-            };
-        } else {
-            nodes[href].isAnchor = true;
-            if (!nodes[href].baseFile) {
-            nodes[href].baseFile = fileName;
-            }
-        }
-        links.push({ source: fileName, target: href, label: text });
-        } else {
-        const targetFile = resolvePath(fileName, href);
-        if (!nodes[targetFile]) nodes[targetFile] = { id: targetFile, label: targetFile };
-        links.push({ source: fileName, target: targetFile, label: text });
-        }
-    });
-    }
-}
+				if (href.startsWith("http")) {
+					nodes["web"] = {
+						id: "web",
+						label: "Web"
+					};
+					links.push({
+						source: fileName,
+						target: "web",
+						label: text
+					});
+				} else if (href.charAt(0) === "#") {
+					if (!nodes[href]) {
+						nodes[href] = {
+							id: href,
+							label: href,
+							isAnchor: true,
+							baseFile: fileName
+						};
+					} else {
+						nodes[href].isAnchor = true;
+						if (!nodes[href].baseFile) {
+							nodes[href].baseFile = fileName;
+						}
+					}
+					links.push({
+						source: fileName,
+						target: href,
+						label: text
+					});
+				} else {
+					const targetFile = resolvePath(fileName, href);
+					if (!nodes[targetFile]) nodes[targetFile] = {
+						id: targetFile,
+						label: targetFile
+					};
+					links.push({
+						source: fileName,
+						target: targetFile,
+						label: text
+					});
+				}
+			});
+		}
+	}
 
-// Imposta i dati nello stato globale
-dataState.nodesData = Object.values(nodes);
-dataState.linksData = links;
-dataState.originalNodesData = dataState.nodesData;
-dataState.originalLinksData = dataState.linksData;
+	// Imposta i dati nello stato globale
+	dataState.nodesData = Object.values(nodes);
+	dataState.linksData = links;
+	dataState.originalNodesData = dataState.nodesData;
+	dataState.originalLinksData = dataState.linksData;
 
-if (state.groupingEnabled) {
-    const grouped = groupGraphData(dataState.originalNodesData, dataState.originalLinksData);
-    dataState.nodesData = grouped.nodes;
-    dataState.linksData = grouped.links;
-}
+	if (state.groupingEnabled) {
+		const grouped = groupGraphData(dataState.originalNodesData, dataState.originalLinksData);
+		dataState.nodesData = grouped.nodes;
+		dataState.linksData = grouped.links;
+	}
 
-dataState.filteredNodes = dataState.nodesData;
-dataState.filteredLinks = dataState.linksData;
-visualizeGraph(dataState.filteredNodes, dataState.filteredLinks);
+	dataState.filteredNodes = dataState.nodesData;
+	dataState.filteredLinks = dataState.linksData;
+	visualizeGraph(dataState.filteredNodes, dataState.filteredLinks);
 }
 
 // ============================================
 // 4. VISUALIZZAZIONE DEL GRAFO CON D3
 // ============================================
 function visualizeGraph(nodes, links) {
-const svg = d3.select("svg");
-svg.selectAll("*").remove();
-const width = document.getElementById("graph-container").clientWidth;
-const height = document.getElementById("graph-container").clientHeight;
-svg.attr("width", width).attr("height", height);
+	const svg = d3.select("svg");
+	svg.selectAll("*").remove();
+	const width = document.getElementById("graph-container").clientWidth;
+	const height = document.getElementById("graph-container").clientHeight;
+	svg.attr("width", width).attr("height", height);
 
-// Container per zoom e panning
-const container = svg.append("g");
+	// Container per zoom e panning
+	const container = svg.append("g");
 
-svg.call(d3.zoom()
-    .scaleExtent([0.1, 4])
-    .on("zoom", event => container.attr("transform", event.transform))
-);
+	svg.call(d3.zoom()
+		.scaleExtent([0.1, 4])
+		.on("zoom", event => container.attr("transform", event.transform))
+	);
 
-const linkGroup = container.append("g").attr("class", "links");
-const nodeGroup = container.append("g").attr("class", "nodes");
+	const linkGroup = container.append("g").attr("class", "links");
+	const nodeGroup = container.append("g").attr("class", "nodes");
 
-simulation = d3.forceSimulation(nodes)
-    .force("link", d3.forceLink(links).id(d => d.id).distance(DEFAULT_LINK_DISTANCE))
-    .force("charge", d3.forceManyBody().strength(DEFAULT_CHARGE_STRENGTH))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("x", d3.forceX(width / 2).strength(0.05))
-    .force("y", d3.forceY(height / 2).strength(0.05));
+	simulation = d3.forceSimulation(nodes)
+		.force("link", d3.forceLink(links).id(d => d.id).distance(DEFAULT_LINK_DISTANCE))
+		.force("charge", d3.forceManyBody().strength(DEFAULT_CHARGE_STRENGTH))
+		.force("center", d3.forceCenter(width / 2, height / 2))
+		.force("x", d3.forceX(width / 2).strength(0.05))
+		.force("y", d3.forceY(height / 2).strength(0.05));
 
-const link = linkGroup.selectAll("line")
-    .data(links)
-    .enter().append("line")
-    .attr("class", "link");
+	const link = linkGroup.selectAll("line")
+		.data(links)
+		.enter().append("line")
+		.attr("class", "link");
 
-const linkText = linkGroup.selectAll("text")
-    .data(links)
-    .enter().append("text")
-    .attr("class", "link-label")
-    .attr("dy", -5)
-    .attr("text-anchor", "middle")
-    .style("font-size", "12px")
-    .text(d => d.label)
-    .style("display", state.showLinkLabels ? "block" : "none");
+	const linkText = linkGroup.selectAll("text")
+		.data(links)
+		.enter().append("text")
+		.attr("class", "link-label")
+		.attr("dy", -5)
+		.attr("text-anchor", "middle")
+		.style("font-size", "12px")
+		.text(d => d.label)
+		.style("display", state.showLinkLabels ? "block" : "none");
 
-const nodeSelection = nodeGroup.selectAll("circle")
-    .data(nodes)
-    .enter().append("circle")
-    .attr("class", d => {
-    if (d.id === "web") return "node web";
-    return d.isAnchor ? "node anchor-node" : "node normal-node";
-    })
-    .attr("r", 10)
-    .on("click", (event, d) => {
-    event.stopPropagation();
-    selectNode(d.id, link, nodeSelection);
-    })
-    .on("mouseover", (event, d) => {
-    d3.select("#tooltip")
-        .style("left", event.pageX + 5 + "px")
-        .style("top", event.pageY + 5 + "px")
-        .style("display", "block")
-        .html(`Node: ${d.label}`);
-    })
-    .on("mouseout", () => d3.select("#tooltip").style("display", "none"))
-    .call(d3.drag()
-    .on("start", dragStarted)
-    .on("drag", dragged)
-    .on("end", dragEnded)
-    );
+	const nodeSelection = nodeGroup.selectAll("circle")
+		.data(nodes)
+		.enter().append("circle")
+		.attr("class", d => {
+			if (d.id === "web") return "node web";
+			return d.isAnchor ? "node anchor-node" : "node normal-node";
+		})
+		.attr("r", 10)
+		.on("click", (event, d) => {
+			event.stopPropagation();
+			selectNode(d.id, link, nodeSelection);
+		})
+		.on("mouseover", (event, d) => {
+			d3.select("#tooltip")
+				.style("left", event.pageX + 5 + "px")
+				.style("top", event.pageY + 5 + "px")
+				.style("display", "block")
+				.html(`Node: ${d.label}`);
+		})
+		.on("mouseout", () => d3.select("#tooltip").style("display", "none"))
+		.call(d3.drag()
+			.on("start", dragStarted)
+			.on("drag", dragged)
+			.on("end", dragEnded)
+		);
 
-const nodeText = nodeGroup.selectAll(".node-label")
-    .data(nodes)
-    .enter().append("text")
-    .text(d => d.label)
-    .attr("class", "node-label")
-    .attr("dy", -15)
-    .attr("text-anchor", "middle")
-    .style("font-size", "12px")
-    .style("display", state.showNodeLabels ? "block" : "none");
+	const nodeText = nodeGroup.selectAll(".node-label")
+		.data(nodes)
+		.enter().append("text")
+		.text(d => d.label)
+		.attr("class", "node-label")
+		.attr("dy", -15)
+		.attr("text-anchor", "middle")
+		.style("font-size", "12px")
+		.style("display", state.showNodeLabels ? "block" : "none");
 
-// Gestione tooltip per i link
-link.on("mouseover", function(event, d) {
-    const sameLinks = dataState.linksData.filter(linkObj => {
-    const src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
-    const tgt = (typeof linkObj.target === "object") ? linkObj.target.id : linkObj.target;
-    return src === d.source.id && tgt === d.target.id;
-    });
-    let tooltipContent = `<strong>Link: ${d.source.id} → ${d.target.id}</strong>`;
-    if (sameLinks.length > 1) {
-    tooltipContent += "<ul>";
-    sameLinks.forEach(linkObj => {
-        tooltipContent += `<li>${linkObj.label}</li>`;
-    });
-    tooltipContent += "</ul>";
-    } else {
-    tooltipContent += `<br>${d.label}`;
-    }
-    d3.select("#tooltip")
-    .style("left", event.pageX + 5 + "px")
-    .style("top", event.pageY + 5 + "px")
-    .style("display", "block")
-    .html(tooltipContent);
-})
-.on("mouseout", () => d3.select("#tooltip").style("display", "none"));
+	// Gestione tooltip per i link
+	link.on("mouseover", function(event, d) {
+			const sameLinks = dataState.linksData.filter(linkObj => {
+				const src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
+				const tgt = (typeof linkObj.target === "object") ? linkObj.target.id : linkObj.target;
+				return src === d.source.id && tgt === d.target.id;
+			});
+			let tooltipContent = `<strong>Link: ${d.source.id} → ${d.target.id}</strong>`;
+			if (sameLinks.length > 1) {
+				tooltipContent += "<ul>";
+				sameLinks.forEach(linkObj => {
+					tooltipContent += `<li>${linkObj.label}</li>`;
+				});
+				tooltipContent += "</ul>";
+			} else {
+				tooltipContent += `<br>${d.label}`;
+			}
+			d3.select("#tooltip")
+				.style("left", event.pageX + 5 + "px")
+				.style("top", event.pageY + 5 + "px")
+				.style("display", "block")
+				.html(tooltipContent);
+		})
+		.on("mouseout", () => d3.select("#tooltip").style("display", "none"));
 
-svg.on("click", () => deselectNode(link, nodeSelection));
+	svg.on("click", () => deselectNode(link, nodeSelection));
 
-simulation.on("tick", () => {
-    link.attr("x1", d => d.source.x)
-    .attr("y1", d => d.source.y)
-    .attr("x2", d => d.target.x)
-    .attr("y2", d => d.target.y);
+	simulation.on("tick", () => {
+		link.attr("x1", d => d.source.x)
+			.attr("y1", d => d.source.y)
+			.attr("x2", d => d.target.x)
+			.attr("y2", d => d.target.y);
 
-    linkText.attr("x", d => (d.source.x + d.target.x) / 2)
-    .attr("y", d => (d.source.y + d.target.y) / 2);
+		linkText.attr("x", d => (d.source.x + d.target.x) / 2)
+			.attr("y", d => (d.source.y + d.target.y) / 2);
 
-    nodeSelection.attr("cx", d => d.x)
-    .attr("cy", d => d.y);
+		nodeSelection.attr("cx", d => d.x)
+			.attr("cy", d => d.y);
 
-    nodeText.attr("x", d => d.x)
-    .attr("y", d => d.y);
-});
+		nodeText.attr("x", d => d.x)
+			.attr("y", d => d.y);
+	});
 }
 
 // ============================================
 // 5. GESTIONE DEGLI EVENTI DI DRAG & DROP & NODE SELECTION
 // ============================================
 function dragStarted(event, d) {
-if (!event.active) simulation.alphaTarget(0.3).restart();
-d.fx = d.x;
-d.fy = d.y;
+	if (!event.active) simulation.alphaTarget(0.3).restart();
+	d.fx = d.x;
+	d.fy = d.y;
 }
 
 function dragged(event, d) {
-d.fx = event.x;
-d.fy = event.y;
+	d.fx = event.x;
+	d.fy = event.y;
 }
 
 function dragEnded(event, d) {
-if (!event.active) simulation.alphaTarget(0);
-if (!state.fixNodesOnDrag) {
-    d.fx = null;
-    d.fy = null;
-}
+	if (!event.active) simulation.alphaTarget(0);
+	if (!state.fixNodesOnDrag) {
+		d.fx = null;
+		d.fy = null;
+	}
 }
 
 function selectNode(id, linkSelection, nodeSelection) {
-    state.selectedNode = id;
-    nodeSelection.classed("selected", d => d.id === id);
-    linkSelection.classed("highlighted", d => d.source.id === id);
+	state.selectedNode = id;
+	nodeSelection.classed("selected", d => d.id === id);
+	linkSelection.classed("highlighted", d => d.source.id === id);
 
-    d3.selectAll(".node-label").classed("bold-label", false);
-    d3.selectAll(".node-label")
-        .filter(d => d.id === id)
-        .classed("bold-label", true);
+	d3.selectAll(".node-label").classed("bold-label", false);
+	d3.selectAll(".node-label")
+		.filter(d => d.id === id)
+		.classed("bold-label", true);
 
-    const nodeInfoContainer = document.getElementById("node-info");
-    nodeInfoContainer.style.display = "block";
+	const nodeInfoContainer = document.getElementById("node-info");
+	nodeInfoContainer.style.display = "block";
 
-    const groupNode = dataState.nodesData.find(n => n.id === id && n.originalNodes);
-    const sourceIds = groupNode ? groupNode.originalNodes.map(n => n.id) : [id];
-    const outgoingLinks = dataState.originalLinksData.filter(linkObj => {
-        const src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
-        return sourceIds.includes(src);
-    });
+	const groupNode = dataState.nodesData.find(n => n.id === id && n.originalNodes);
+	const sourceIds = groupNode ? groupNode.originalNodes.map(n => n.id) : [id];
+	const outgoingLinks = dataState.originalLinksData.filter(linkObj => {
+		const src = (typeof linkObj.source === "object") ? linkObj.source.id : linkObj.source;
+		return sourceIds.includes(src);
+	});
 
-    let contentHTML = `
+	let contentHTML = `
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Node Details</h5>
@@ -403,15 +427,16 @@ function selectNode(id, linkSelection, nodeSelection) {
                                    style="font-size: 1.3rem; cursor: pointer; color: ${targetColor};"></i>
                             </li>
                             `;
-                        }).join('')}
-                    </ul>
-                </div>
-                ` 
-                  : `<p class="mt-3">No outgoing links</p>`
-                }
-            </div>
-        </div>
-    `;
+}).join('')
+} <
+/ul> <
+/div>
+` 
+                  : ` < p class = "mt-3" > No outgoing links < /p>`
+} <
+/div> <
+/div>
+`;
 
     nodeInfoContainer.innerHTML = contentHTML;
 
