@@ -23,9 +23,10 @@ Check out the live demo: [HyperViewer Demo](https://www.fspezzano.it/hyperViewer
 
 ## Technologies Used
 
-- **D3.js**: For data visualization.
-- **JavaScript**: Core application logic.
-- **HTML/CSS**: For styling and layout.
+- <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/d3js/d3js-original.svg" alt="D3.js" width="30" /> **D3.js**: For data visualization.
+- <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/javascript/javascript-original.svg" alt="JavaScript" width="30" /> **JavaScript**: Core application logic.
+- <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/html5/html5-original.svg" alt="HTML" width="30" /> **HTML**: Markup structure.
+- <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/css3/css3-original.svg" alt="CSS" width="30" /> **CSS**: Styling and layout.
 
 ## Contributing
 
