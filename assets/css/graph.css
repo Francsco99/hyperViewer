@@ -42,13 +42,15 @@ body {
 
 .link-item:hover:not(.active) {
     background-color: #f0f0f0;
+    text-decoration: underline;
   }  
 
 .link-item.active {
     color: black;
     background-color: #f0f0f0;
     border-color: var(--bs-list-group-border-color);
-    font-size: 1.1rem;
+    text-decoration: underline;
+    font-style: italic;
 }  
 
 #tooltip{
@@ -60,6 +62,25 @@ body {
     display: none; 
     pointer-events: none;
 }
+
+/* Stile uniforme per tutte le tooltip Bootstrap */
+.tooltip-inner {
+    background-color: #333; /* Colore di sfondo */
+    color: #fff;            /* Colore del testo */
+    font-family: "Poppins", sans-serif;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    border-radius: 4px;
+    text-align: center;
+  }
+  
+  .tooltip.bs-tooltip-top .arrow::before,
+  .tooltip.bs-tooltip-bottom .arrow::before,
+  .tooltip.bs-tooltip-left .arrow::before,
+  .tooltip.bs-tooltip-right .arrow::before {
+    background-color: #333; /* Colore della freccia */
+  }
+  
 
 #searchInput{
     width: 0; 
