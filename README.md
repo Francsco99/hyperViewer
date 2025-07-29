@@ -1,7 +1,7 @@
-# HyperViewer
-<img src="assets/images/binoculars_logo.png" alt="HyperViewer Logo" width="200" />
+# HyperView
+<img src="assets/images/binoculars_logo.png" alt="HyperView Logo" width="200" />
 
-**HyperViewer** is a web application that provides an interactive visualization of hyperlinks using **D3.js force simulation**. It allows users to explore hyperlink structures dynamically, making it easier to understand the relationships between different web pages.
+**HyperView** is a web application that provides an interactive visualization of hyperlinks using **D3.js force simulation**. It allows users to explore hyperlink structures dynamically, making it easier to understand the relationships between different web pages.
 
 ## Features
 
@@ -13,7 +13,7 @@
 
 ## Demo
 
-Check out the live demo: [HyperViewer Demo](https://www.fspezzano.it/hyperViewer)
+Check out the live demo: [HyperView Demo](https://www.fspezzano.it/HyperView)
 
 ## Usage
 
@@ -45,4 +45,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 For questions or support, reach out at:
 - **Email**: your-email@example.com
-- **GitHub Issues**: [Submit a ticket](https://github.com/your-username/hyperViewer/issues)
+- **GitHub Issues**: [Submit a ticket](https://github.com/your-username/HyperView/issues)
