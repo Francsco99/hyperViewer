@@ -44,5 +44,4 @@ This project is licensed under the [MIT License](LICENSE).
 ## Contact
 
 For questions or support, reach out at:
-- **Email**: your-email@example.com
 - **GitHub Issues**: [Submit a ticket](https://github.com/your-username/HyperView/issues)
