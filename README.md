@@ -13,7 +13,7 @@
 
 ## Demo
 
-Check out the live demo: [HyperView Demo](https://www.fspezzano.it/hyperView)
+Check out the live demo: [HyperView Demo](https://www.fspezzano.it/hyperViewer)
 
 ## Usage
 
